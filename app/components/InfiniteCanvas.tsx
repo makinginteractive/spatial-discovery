@@ -1,20 +1,38 @@
 import {useEffect, useRef, useState} from 'react';
 import * as THREE from 'three';
-import {products, type Product} from '~/lib/products';
 
-type Props = {
-  query: string;
-  onSelect: (p: Product) => void;
-  onHover: (p: Product | null) => void;
+export type CanvasProduct = {
+  id: string;
+  title: string;
+  handle: string;
+  description: string;
+  productType: string;
+  priceRange: {
+    minVariantPrice: {
+      amount: string;
+      currencyCode: string;
+    };
+  };
+  featuredImage: {url: string; altText: string | null} | null;
+  images: {nodes: Array<{url: string; altText: string | null}>};
+  variants: {nodes: Array<{id: string; availableForSale: boolean}>};
 };
 
-export function InfiniteCanvas({query, onSelect, onHover}: Props) {
+type Props = {
+  products: CanvasProduct[];
+  query: string;
+  onSelect: (p: CanvasProduct) => void;
+  onHover: (p: CanvasProduct | null) => void;
+};
+
+export function InfiniteCanvas({products, query, onSelect, onHover}: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const queryRef = useRef(query);
   queryRef.current = query;
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    if (!products.length) return;
     const mount = mountRef.current!;
     const scene = new THREE.Scene();
     scene.background = null;
@@ -39,7 +57,8 @@ export function InfiniteCanvas({query, onSelect, onHover}: Props) {
 
     const loader = new THREE.TextureLoader();
     const textures = products.map((p) => {
-      const t = loader.load(p.image);
+      const url = p.featuredImage?.url ?? '';
+      const t = loader.load(url);
       t.colorSpace = THREE.SRGBColorSpace;
       t.anisotropy = 4;
       return t;
@@ -83,8 +102,7 @@ export function InfiniteCanvas({query, onSelect, onHover}: Props) {
       const h = mount.clientHeight;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
-      const baseZ = w < 640 ? 11 : 8;
-      camera.position.z = baseZ;
+      camera.position.z = w < 640 ? 11 : 8;
       camera.updateProjectionMatrix();
     }
     resize();
@@ -108,15 +126,13 @@ export function InfiniteCanvas({query, onSelect, onHover}: Props) {
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
       if (dragging) {
         const dx = e.clientX - lastX;
         const dy = e.clientY - lastY;
         lastX = e.clientX;
         lastY = e.clientY;
-        const k = 0.012;
-        target.x -= dx * k;
-        target.y += dy * k;
+        target.x -= dx * 0.012;
+        target.y += dy * 0.012;
         dragMoved += Math.abs(dx) + Math.abs(dy);
       }
     };
@@ -126,9 +142,8 @@ export function InfiniteCanvas({query, onSelect, onHover}: Props) {
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const k = 0.0035;
-      target.x += e.deltaX * k;
-      target.y += e.deltaY * k;
+      target.x += e.deltaX * 0.0035;
+      target.y += e.deltaY * 0.0035;
     };
     const onClick = (e: MouseEvent) => {
       if (dragMoved > 6) return;
@@ -152,13 +167,11 @@ export function InfiniteCanvas({query, onSelect, onHover}: Props) {
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2(-2, -2);
     let hoveredTile: Tile | null = null;
-
     let raf = 0;
     const clock = new THREE.Clock();
 
     function frame() {
       const t = clock.getElapsedTime();
-
       const ease = 0.08;
       const px = offset.x;
       const py = offset.y;
@@ -166,7 +179,6 @@ export function InfiniteCanvas({query, onSelect, onHover}: Props) {
       offset.y += (target.y - offset.y) * ease;
       velocity.x = offset.x - px;
       velocity.y = offset.y - py;
-
       target.x += 0.0015;
 
       const totalW = (COLS * 2 + 1) * CELL_W;
@@ -176,7 +188,7 @@ export function InfiniteCanvas({query, onSelect, onHover}: Props) {
       const hits = raycaster.intersectObjects(tiles.map((tt) => tt.mesh));
       const newHover =
         hits.length
-          ? tiles.find((tt) => tt.mesh === hits[0].object) ?? null
+          ? (tiles.find((tt) => tt.mesh === hits[0].object) ?? null)
           : null;
       if (newHover !== hoveredTile) {
         hoveredTile = newHover;
@@ -193,7 +205,6 @@ export function InfiniteCanvas({query, onSelect, onHover}: Props) {
       for (const tile of tiles) {
         const baseX = tile.i * CELL_W;
         const baseY = tile.j * CELL_H;
-
         let x = baseX - offset.x;
         x = ((x + totalW / 2) % totalW + totalW) % totalW - totalW / 2;
         let y = baseY - offset.y;
@@ -211,10 +222,8 @@ export function InfiniteCanvas({query, onSelect, onHover}: Props) {
 
         const colShift = (worldCellI % 2) * (CELL_H * 0.4);
         const yy = y + colShift - (worldCellI % 2 ? CELL_H * 0.2 : 0);
-
         const seed = hash(worldCellI, worldCellJ);
         const z = Math.sin(t * 0.6 + seed * 6.28) * 0.25 - seed * 0.4;
-
         tile.mesh.position.set(x, yy, z);
 
         const isHover = tile === hoveredTile;
@@ -225,8 +234,8 @@ export function InfiniteCanvas({query, onSelect, onHover}: Props) {
         const product = products[pIdx];
         const matches =
           q.length === 0 ||
-          product.name.toLowerCase().includes(q) ||
-          product.tag.toLowerCase().includes(q);
+          product.title.toLowerCase().includes(q) ||
+          product.productType.toLowerCase().includes(q);
         const targetOp = matches ? 1 : 0.12;
         tile.mesh.material.opacity +=
           (targetOp - tile.mesh.material.opacity) * 0.1;
@@ -261,9 +270,11 @@ export function InfiniteCanvas({query, onSelect, onHover}: Props) {
       });
       textures.forEach((t) => t.dispose());
       renderer.dispose();
-      mount.removeChild(renderer.domElement);
+      if (mount.contains(renderer.domElement)) {
+        mount.removeChild(renderer.domElement);
+      }
     };
-  }, [onHover, onSelect]);
+  }, [products, onHover, onSelect]);
 
   return (
     <div ref={mountRef} className="absolute inset-0" aria-hidden={!ready} />
