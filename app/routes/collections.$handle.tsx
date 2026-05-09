@@ -1,159 +1,204 @@
-import {redirect, useLoaderData} from 'react-router';
+import {useState, useCallback} from 'react';
+import {useLoaderData, Link, useNavigate} from 'react-router';
 import type {Route} from './+types/collections.$handle';
-import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
-import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import {ProductItem} from '~/components/ProductItem';
-import type {ProductItemFragment} from 'storefrontapi.generated';
+import {Analytics} from '@shopify/hydrogen';
+import {InfiniteCanvas, type CanvasProduct} from '~/components/InfiniteCanvas';
+import {ProductOverlay} from '~/components/ProductOverlay';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
-};
+export const meta: Route.MetaFunction = ({data}) => [
+  {title: `${data?.collection.title ?? 'Collection'} — Maison Écho`},
+];
 
-export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
+const SORT_OPTIONS = [
+  {label: 'Featured', value: 'MANUAL', reverse: false},
+  {label: 'Newest', value: 'CREATED', reverse: true},
+  {label: 'Price ↑', value: 'PRICE', reverse: false},
+  {label: 'Price ↓', value: 'PRICE', reverse: true},
+  {label: 'A–Z', value: 'TITLE', reverse: false},
+] as const;
 
-  // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
-}
-
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
-async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
+export async function loader({context, params, request}: Route.LoaderArgs) {
   const {handle} = params;
-  const {storefront} = context;
-  const paginationVariables = getPaginationVariables(request, {
-    pageBy: 8,
+  if (!handle) throw new Response(null, {status: 404});
+
+  const url = new URL(request.url);
+  const sortParam = url.searchParams.get('sort') ?? 'MANUAL';
+  const reverseParam = url.searchParams.get('reverse') === 'true';
+
+  const {collection} = await context.storefront.query(COLLECTION_QUERY, {
+    variables: {handle, first: 48, sortKey: sortParam, reverse: reverseParam},
   });
 
-  if (!handle) {
-    throw redirect('/collections');
-  }
-
-  const [{collection}] = await Promise.all([
-    storefront.query(COLLECTION_QUERY, {
-      variables: {handle, ...paginationVariables},
-      // Add other queries here, so that they are loaded in parallel
-    }),
-  ]);
-
-  if (!collection) {
-    throw new Response(`Collection ${handle} not found`, {
-      status: 404,
-    });
-  }
-
-  // The API handle might be localized, so redirect to the localized handle
-  redirectIfHandleIsLocalized(request, {handle, data: collection});
+  if (!collection) throw new Response(null, {status: 404});
 
   return {
     collection,
+    products: collection.products.nodes as CanvasProduct[],
+    sortKey: sortParam,
+    reverse: reverseParam,
   };
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context}: Route.LoaderArgs) {
-  return {};
-}
+export default function CollectionDetail() {
+  const {collection, products, sortKey, reverse} = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState<CanvasProduct | null>(null);
+  const [hovered, setHovered] = useState<CanvasProduct | null>(null);
+  const [query, setQuery] = useState('');
 
-export default function Collection() {
-  const {collection} = useLoaderData<typeof loader>();
+  const handleSelect = useCallback((p: CanvasProduct) => setSelected(p), []);
+  const handleHover = useCallback((p: CanvasProduct | null) => setHovered(p), []);
+
+  const activeSort = SORT_OPTIONS.find(
+    (o) => o.value === sortKey && o.reverse === reverse,
+  ) ?? SORT_OPTIONS[0];
+
+  function setSort(value: string, rev: boolean) {
+    navigate(
+      `/collections/${collection.handle}?sort=${value}&reverse=${rev}`,
+      {replace: true},
+    );
+  }
 
   return (
-    <div className="collection">
-      <h1>{collection.title}</h1>
-      <p className="collection-description">{collection.description}</p>
-      <PaginatedResourceSection<ProductItemFragment>
-        connection={collection.products}
-        resourcesClassName="products-grid"
-      >
-        {({node: product, index}) => (
-          <ProductItem
-            key={product.id}
-            product={product}
-            loading={index < 8 ? 'eager' : undefined}
-          />
-        )}
-      </PaginatedResourceSection>
-      <Analytics.CollectionView
-        data={{
-          collection: {
-            id: collection.id,
-            handle: collection.handle,
-          },
+    <div className="fixed inset-0 bg-background text-foreground grain overflow-hidden">
+      {/* Vignette */}
+      <div
+        className="absolute inset-0 pointer-events-none z-10"
+        style={{
+          background:
+            'radial-gradient(ellipse at center, transparent 30%, oklch(0.972 0.012 85 / 0.0) 50%, oklch(0.85 0.02 75 / 0.55) 100%)',
         }}
+      />
+
+      {/* Canvas */}
+      <InfiniteCanvas
+        products={products}
+        query={query}
+        onSelect={handleSelect}
+        onHover={handleHover}
+      />
+
+      {/* Top bar */}
+      <header className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-5 sm:px-10 h-16 pointer-events-none">
+        <div className="flex items-baseline gap-4 pointer-events-auto">
+          <Link
+            to="/collections"
+            className="font-display text-xl tracking-tight hover:text-accent transition-colors"
+          >
+            Maison Écho
+          </Link>
+          <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+            {collection.title}
+          </span>
+        </div>
+
+        {/* Sort controls */}
+        <div className="flex items-center gap-1 pointer-events-auto bg-card/70 backdrop-blur-md border border-border rounded-full px-3 py-1.5">
+          {SORT_OPTIONS.map((opt) => {
+            const isActive = opt.value === activeSort.value && opt.reverse === activeSort.reverse;
+            return (
+              <button
+                key={`${opt.value}-${opt.reverse}`}
+                onClick={() => setSort(opt.value, opt.reverse)}
+                className={`px-3 py-1 text-[10px] uppercase tracking-[0.2em] rounded-full transition-colors ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      </header>
+
+      {/* Search pill */}
+      <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 w-[min(380px,calc(100vw-14rem))] hidden lg:block">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={`Search ${collection.title.toLowerCase()}…`}
+          className="w-full h-10 bg-card/70 backdrop-blur-md border border-border rounded-full px-5 text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring/40 font-sans"
+        />
+      </div>
+
+      {/* Hover label */}
+      <div
+        className={`absolute z-20 left-1/2 -translate-x-1/2 bottom-32 transition-all duration-500 pointer-events-none ${
+          hovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+        }`}
+      >
+        {hovered && (
+          <div className="text-center">
+            <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-1">
+              {hovered.productType}
+            </div>
+            <div className="font-display text-3xl sm:text-4xl">{hovered.title}</div>
+            <div className="text-sm text-muted-foreground mt-1">
+              ${parseFloat(hovered.priceRange.minVariantPrice.amount)} · click to open
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom nav */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+        <div className="flex items-center gap-1 bg-card/80 backdrop-blur-md border border-border rounded-full pl-2 pr-2 py-2 shadow-lg">
+          <Link
+            to="/"
+            className="px-4 py-2 text-[10px] uppercase tracking-[0.25em] hover:text-accent transition-colors"
+          >
+            Field
+          </Link>
+          <Link
+            to="/collections"
+            className="px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-accent"
+          >
+            Collections
+          </Link>
+        </div>
+      </div>
+
+      <ProductOverlay product={selected} onClose={() => setSelected(null)} />
+
+      <Analytics.CollectionView
+        data={{collection: {id: collection.id, handle: collection.handle}}}
       />
     </div>
   );
 }
 
-const PRODUCT_ITEM_FRAGMENT = `#graphql
-  fragment MoneyProductItem on MoneyV2 {
-    amount
-    currencyCode
-  }
-  fragment ProductItem on Product {
-    id
-    handle
-    title
-    featuredImage {
-      id
-      altText
-      url
-      width
-      height
-    }
-    priceRange {
-      minVariantPrice {
-        ...MoneyProductItem
-      }
-      maxVariantPrice {
-        ...MoneyProductItem
-      }
-    }
-  }
-` as const;
-
-// NOTE: https://shopify.dev/docs/api/storefront/2022-04/objects/collection
 const COLLECTION_QUERY = `#graphql
-  ${PRODUCT_ITEM_FRAGMENT}
   query Collection(
     $handle: String!
-    $country: CountryCode
-    $language: LanguageCode
-    $first: Int
-    $last: Int
-    $startCursor: String
-    $endCursor: String
-  ) @inContext(country: $country, language: $language) {
+    $first: Int!
+    $sortKey: ProductCollectionSortKeys!
+    $reverse: Boolean!
+  ) {
     collection(handle: $handle) {
       id
-      handle
       title
+      handle
       description
-      products(
-        first: $first,
-        last: $last,
-        before: $startCursor,
-        after: $endCursor
-      ) {
+      products(first: $first, sortKey: $sortKey, reverse: $reverse) {
         nodes {
-          ...ProductItem
-        }
-        pageInfo {
-          hasPreviousPage
-          hasNextPage
-          endCursor
-          startCursor
+          id
+          title
+          handle
+          description
+          productType
+          priceRange {
+            minVariantPrice { amount currencyCode }
+          }
+          featuredImage { url altText }
+          images(first: 5) {
+            nodes { url altText }
+          }
+          variants(first: 1) {
+            nodes { id availableForSale }
+          }
         }
       }
     }
