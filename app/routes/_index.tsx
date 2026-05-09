@@ -99,6 +99,18 @@ export default function Index() {
         }}
       />
 
+      {/* Scripture watermark */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+        <div className="text-center px-8 max-w-xl select-none" style={{opacity: 0.13}}>
+          <p className="font-display text-2xl sm:text-3xl leading-snug tracking-tight italic text-foreground">
+            "I press on toward the goal to win the prize for which God has called me heavenward in Christ Jesus"
+          </p>
+          <p className="mt-3 text-[9px] uppercase tracking-[0.35em] font-sans text-foreground">
+            Philippians 3:14
+          </p>
+        </div>
+      </div>
+
       <InfiniteCanvas
         products={displayedProducts}
         query={query}
