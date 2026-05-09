@@ -114,6 +114,7 @@ export function InfiniteCanvas({
           map: textures[0],
           opacity: 0,
         });
+        const mesh = new THREE.Mesh(geo, mat);
         // Start each tile at a random scattered position for the load animation
         const angle = Math.random() * Math.PI * 2;
         const dist = 3 + Math.random() * 5;
