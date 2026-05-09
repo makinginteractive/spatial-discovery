@@ -1,4 +1,4 @@
-import {useState, useCallback, useMemo, useRef, Suspense} from 'react';
+import {useState, useCallback, useMemo, useRef, useEffect, Suspense} from 'react';
 import {useLoaderData, useRouteLoaderData} from 'react-router';
 import {Await} from 'react-router';
 import type {Route} from './+types/_index';
@@ -47,6 +47,9 @@ export default function Index() {
   const [activeType, setActiveType] = useState<string | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const labelRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const handleSelect = useCallback((p: CanvasProduct) => setSelected(p), []);
   const handleHover = useCallback((p: CanvasProduct | null) => setHovered(p), []);
@@ -68,6 +71,30 @@ export default function Index() {
     if (!activeType) return products;
     return products.filter((p) => p.productType === activeType);
   }, [products, activeType]);
+
+  const searchResults = useMemo(() => {
+    if (!query.trim()) return [];
+    const q = query.toLowerCase();
+    return products
+      .filter((p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.productType?.toLowerCase().includes(q),
+      )
+      .slice(0, 6);
+  }, [products, query]);
+
+  // Collapse search on outside click
+  useEffect(() => {
+    if (!searchOpen) return;
+    function handleOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+        setQuery('');
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [searchOpen]);
 
   function openCollections() {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
@@ -136,35 +163,85 @@ export default function Index() {
         </nav>
       </header>
 
-      {/* Search pill — desktop */}
-      <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 w-[min(440px,calc(100vw-12rem))] hidden md:block">
-        <div className="relative">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search the field…"
-            className="w-full h-11 bg-card/70 backdrop-blur-md border border-border rounded-full px-5 text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring/40 font-sans shadow-sm"
-          />
-          {query && (
+      {/* Expandable search pill */}
+      <div
+        ref={searchRef}
+        className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center"
+      >
+        {/* Pill */}
+        <div
+          className={`flex items-center gap-2.5 bg-card/80 backdrop-blur-md border border-border rounded-full shadow-sm transition-all duration-300 overflow-hidden h-10 ${
+            searchOpen
+              ? 'w-[min(400px,calc(100vw-3rem))] px-4 border-accent/40'
+              : 'w-auto px-4 cursor-pointer hover:border-accent/60'
+          }`}
+          onClick={() => !searchOpen && setSearchOpen(true)}
+        >
+          <svg
+            width="12" height="12" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            className="shrink-0 text-muted-foreground"
+          >
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          {searchOpen ? (
+            <input
+              ref={inputRef}
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search the field…"
+              className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground/50 focus:outline-none font-sans min-w-0"
+            />
+          ) : (
+            <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+              Search
+            </span>
+          )}
+          {searchOpen && query && (
             <button
-              onClick={() => setQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full hover:bg-muted text-sm"
+              onClick={(e) => { e.stopPropagation(); setQuery(''); }}
+              className="shrink-0 text-muted-foreground hover:text-foreground text-lg leading-none"
               aria-label="Clear"
             >
               ×
             </button>
           )}
         </div>
-      </div>
 
-      {/* Search pill — mobile */}
-      <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 w-[min(440px,calc(100vw-2.5rem))] md:hidden">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search the field…"
-          className="w-full h-10 bg-card/70 backdrop-blur-md border border-border rounded-full px-5 text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring/40 font-sans"
-        />
+        {/* Live results */}
+        {searchOpen && searchResults.length > 0 && (
+          <div className="mt-2 w-[min(400px,calc(100vw-3rem))] bg-card/90 backdrop-blur-md border border-border rounded-2xl overflow-hidden shadow-lg">
+            {searchResults.map((product) => (
+              <button
+                key={product.id}
+                onClick={() => {
+                  setSelected(product);
+                  setSearchOpen(false);
+                  setQuery('');
+                }}
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-muted/40 transition-colors text-left border-b border-border/60 last:border-0"
+              >
+                <div className="min-w-0">
+                  <div className="font-display text-base leading-tight truncate">{product.title}</div>
+                  {product.productType && (
+                    <div className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground mt-0.5">{product.productType}</div>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground shrink-0">
+                  ${parseFloat(product.priceRange.minVariantPrice.amount)}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* No results */}
+        {searchOpen && query.trim() && searchResults.length === 0 && (
+          <div className="mt-2 w-[min(400px,calc(100vw-3rem))] bg-card/90 backdrop-blur-md border border-border rounded-2xl px-4 py-3 text-center">
+            <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Nothing found</span>
+          </div>
+        )}
       </div>
 
       {/* Hover label — pinned to tile center via direct DOM update */}
