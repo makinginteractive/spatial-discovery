@@ -126,7 +126,7 @@ export default function Index() {
 
   return (
     <main className="fixed inset-0 grain overflow-hidden">
-      <PolicyBar />
+      <PolicyBar infoOpen={infoOpen} onToggleInfo={() => setInfoOpen((o) => !o)} />
       <InfoPanel open={infoOpen} onClose={() => setInfoOpen(false)} />
 
       {/* Radial vignette */}
@@ -410,14 +410,6 @@ export default function Index() {
           </Suspense>
         </div>
 
-        {/* Info panel trigger */}
-        <button
-          onClick={() => setInfoOpen((o) => !o)}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors leading-none"
-          aria-label={infoOpen ? 'Close info' : 'Open info'}
-        >
-          {infoOpen ? '↓' : '↑'}
-        </button>
       </div>
 
       <ProductOverlay product={selected} onClose={() => setSelected(null)} />
