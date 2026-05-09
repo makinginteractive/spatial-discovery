@@ -61,7 +61,7 @@ export function links() {
       href: 'https://shop.app',
     },
     // Google Fonts — Barlow Condensed
-    {rel: 'preconnect', href: 'https://fonts.googleapis.com'},
+    {rel: 'preconnect', href: 'https://fonts.googleapis.com', crossOrigin: 'anonymous' as const},
     {
       rel: 'preconnect',
       href: 'https://fonts.gstatic.com',
