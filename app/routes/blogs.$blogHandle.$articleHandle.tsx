@@ -4,7 +4,7 @@ import {Image} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 export const meta: Route.MetaFunction = ({data}) => [
-  {title: `${data?.article.title ?? 'Article'} — Maison Écho`},
+  {title: `${data?.article.title ?? 'Article'} — P3XIV`},
   {name: 'description', content: data?.article.seo?.description ?? ''},
 ];
 

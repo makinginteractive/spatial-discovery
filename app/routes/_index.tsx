@@ -8,14 +8,14 @@ import {ProductOverlay} from '~/components/ProductOverlay';
 import {CartDrawer} from '~/components/CartDrawer';
 
 export const meta: Route.MetaFunction = () => [
-  {title: 'MAISON ÉCHO — An infinite store'},
+  {title: 'P3XIV — Press On'},
   {
     name: 'description',
     content:
-      'A spatial, infinite product field. Drift, search, and discover objects of slow design.',
+      'A spatial field of objects for the purposeful life. Drift, discover, press on.',
   },
-  {property: 'og:title', content: 'MAISON ÉCHO — An infinite store'},
-  {property: 'og:description', content: 'A spatial, infinite product field.'},
+  {property: 'og:title', content: 'P3XIV — Press On'},
+  {property: 'og:description', content: 'Objects for the purposeful life.'},
 ];
 
 type MenuItem = {id: string; title: string; url: string; type: string};
@@ -154,7 +154,7 @@ export default function Index() {
       {/* Top bar */}
       <header className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-5 sm:px-10 h-16 pointer-events-none">
         <div className={`${searchOpen ? 'hidden sm:flex' : 'flex'} items-baseline gap-3 pointer-events-auto`}>
-          <span className="font-display text-xl tracking-tight">Maison Écho</span>
+          <span className="font-display text-xl tracking-tight">P3XIV</span>
           {activeType ? (
             <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-accent">
               {activeType}
@@ -417,7 +417,7 @@ export default function Index() {
       <ProductOverlay product={selected} onClose={() => setSelected(null)} />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} promoProducts={promoProducts} />
 
-      <h1 className="sr-only">Maison Écho — An infinite, spatial store</h1>
+      <h1 className="sr-only">P3XIV — Press On</h1>
     </main>
   );
 }

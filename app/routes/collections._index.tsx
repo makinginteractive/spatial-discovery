@@ -2,7 +2,7 @@ import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/collections._index';
 
 export const meta: Route.MetaFunction = () => [
-  {title: 'Collections — Maison Écho'},
+  {title: 'Collections — P3XIV'},
   {name: 'description', content: 'Browse every collection in the field.'},
 ];
 
@@ -31,7 +31,7 @@ export default function CollectionsIndex() {
           to="/"
           className="font-display text-xl tracking-tight hover:text-accent transition-colors"
         >
-          Maison Écho
+          P3XIV
         </Link>
         <span className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
           Collections

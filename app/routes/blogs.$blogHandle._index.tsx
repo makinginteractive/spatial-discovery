@@ -6,8 +6,8 @@ import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 export const meta: Route.MetaFunction = ({data}) => [
-  {title: `${data?.blog.title ?? 'Journal'} — Maison Écho`},
-  {name: 'description', content: `Dispatches from the field — ${data?.blog.title}`},
+  {title: `${data?.blog.title ?? 'Blog'} — P3XIV`},
+  {name: 'description', content: `Objects for the purposeful life — ${data?.blog.title}`},
 ];
 
 async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
@@ -41,7 +41,7 @@ export default function Blog() {
           to="/"
           className="font-display text-lg tracking-tight text-white/90 hover:text-white transition-colors drop-shadow"
         >
-          ← Maison Écho
+          ← P3XIV
         </Link>
         <span className="text-[10px] uppercase tracking-[0.3em] text-white/60 drop-shadow hidden sm:inline">
           {blog.title}

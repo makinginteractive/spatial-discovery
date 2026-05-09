@@ -3,7 +3,7 @@ import type {Route} from './+types/pages.$handle';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 export const meta: Route.MetaFunction = ({data}) => [
-  {title: `${data?.page.title ?? 'Page'} — Maison Écho`},
+  {title: `${data?.page.title ?? 'Page'} — P3XIV`},
   {name: 'description', content: data?.page.seo?.description ?? ''},
 ];
 
@@ -31,7 +31,7 @@ export default function Page() {
       {/* Nav */}
       <header className="flex items-center justify-between px-6 sm:px-12 h-16 border-b border-border">
         <Link to="/" className="font-display text-lg tracking-tight hover:text-accent transition-colors">
-          ← Maison Écho
+          ← P3XIV
         </Link>
         <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground hidden sm:inline">
           {page.title}

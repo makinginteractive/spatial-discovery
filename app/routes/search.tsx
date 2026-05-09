@@ -5,7 +5,7 @@ import {urlWithTrackingParams, type RegularSearchReturn} from '~/lib/search';
 import type {RegularSearchQuery} from 'storefrontapi.generated';
 
 export const meta: Route.MetaFunction = ({data}) => [
-  {title: `${(data as any)?.term ? `"${(data as any).term}" — Search` : 'Search'} — Maison Écho`},
+  {title: `${(data as any)?.term ? `"${(data as any).term}" — Search` : 'Search'} — P3XIV`},
 ];
 
 export async function loader({request, context}: Route.LoaderArgs) {
@@ -38,7 +38,7 @@ export default function SearchPage() {
       <header className="border-b border-border">
         <div className="max-w-6xl mx-auto px-6 sm:px-12 h-16 flex items-center justify-between">
           <Link to="/" className="font-display text-lg tracking-tight hover:text-accent transition-colors">
-            ← Maison Écho
+            ← P3XIV
           </Link>
           <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground hidden sm:inline">
             Search

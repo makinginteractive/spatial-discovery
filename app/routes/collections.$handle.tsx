@@ -6,7 +6,7 @@ import {InfiniteCanvas, type CanvasProduct} from '~/components/InfiniteCanvas';
 import {ProductOverlay} from '~/components/ProductOverlay';
 
 export const meta: Route.MetaFunction = ({data}) => [
-  {title: `${data?.collection.title ?? 'Collection'} — Maison Écho`},
+  {title: `${data?.collection.title ?? 'Collection'} — P3XIV`},
 ];
 
 const SORT_OPTIONS = [
@@ -86,7 +86,7 @@ export default function CollectionDetail() {
             to="/collections"
             className="font-display text-xl tracking-tight hover:text-accent transition-colors"
           >
-            Maison Écho
+            P3XIV
           </Link>
           <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
             {collection.title}
