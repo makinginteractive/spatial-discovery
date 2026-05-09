@@ -1,100 +1,98 @@
-import {useLoaderData} from 'react-router';
+import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/blogs.$blogHandle.$articleHandle';
 import {Image} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.article.title ?? ''} article`}];
-};
+export const meta: Route.MetaFunction = ({data}) => [
+  {title: `${data?.article.title ?? 'Article'} — Maison Écho`},
+  {name: 'description', content: data?.article.seo?.description ?? ''},
+];
 
-export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
-}
-
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
 async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
   const {blogHandle, articleHandle} = params;
-
-  if (!articleHandle || !blogHandle) {
-    throw new Response('Not found', {status: 404});
-  }
-
+  if (!articleHandle || !blogHandle) throw new Response('Not found', {status: 404});
   const [{blog}] = await Promise.all([
-    context.storefront.query(ARTICLE_QUERY, {
-      variables: {blogHandle, articleHandle},
-    }),
-    // Add other queries here, so that they are loaded in parallel
+    context.storefront.query(ARTICLE_QUERY, {variables: {blogHandle, articleHandle}}),
   ]);
-
-  if (!blog?.articleByHandle) {
-    throw new Response(null, {status: 404});
-  }
-
-  redirectIfHandleIsLocalized(
-    request,
-    {
-      handle: articleHandle,
-      data: blog.articleByHandle,
-    },
-    {
-      handle: blogHandle,
-      data: blog,
-    },
-  );
-
-  const article = blog.articleByHandle;
-
-  return {article};
+  if (!blog?.articleByHandle) throw new Response(null, {status: 404});
+  redirectIfHandleIsLocalized(request, {handle: articleHandle, data: blog.articleByHandle}, {handle: blogHandle, data: blog});
+  return {article: blog.articleByHandle, blogHandle};
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context}: Route.LoaderArgs) {
-  return {};
+function loadDeferredData(_args: Route.LoaderArgs) { return {}; }
+
+export async function loader(args: Route.LoaderArgs) {
+  return {...loadDeferredData(args), ...await loadCriticalData(args)};
 }
 
 export default function Article() {
-  const {article} = useLoaderData<typeof loader>();
+  const {article, blogHandle} = useLoaderData<typeof loader>();
   const {title, image, contentHtml, author} = article;
 
-  const publishedDate = new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date(article.publishedAt));
+  const date = new Intl.DateTimeFormat('en-US', {year: 'numeric', month: 'long', day: 'numeric'})
+    .format(new Date(article.publishedAt));
 
   return (
-    <div className="article">
-      <h1>
-        {title}
-        <div>
-          <time dateTime={article.publishedAt}>{publishedDate}</time> &middot;{' '}
-          <address>{author?.name}</address>
-        </div>
-      </h1>
+    <div className="min-h-screen bg-background text-foreground font-sans">
+      {/* Nav */}
+      <header className="flex items-center justify-between px-6 sm:px-12 h-16 border-b border-border">
+        <Link
+          to={`/blogs/${blogHandle}`}
+          className="font-display text-lg tracking-tight hover:text-accent transition-colors"
+        >
+          ← Journal
+        </Link>
+        {author?.name && (
+          <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground hidden sm:inline">
+            {author.name}
+          </span>
+        )}
+      </header>
 
-      {image && <Image data={image} sizes="90vw" loading="eager" />}
-      <div
-        dangerouslySetInnerHTML={{__html: contentHtml}}
-        className="article"
-      />
+      <article className="max-w-2xl mx-auto px-6 sm:px-12 py-16 sm:py-24">
+        {/* Meta */}
+        <div className="mb-10">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground mb-4">
+            <time dateTime={article.publishedAt}>{date}</time>
+            {author?.name && <> · {author.name}</>}
+          </p>
+          <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl leading-[0.9] tracking-tight">
+            {title}
+          </h1>
+        </div>
+
+        {/* Hero image */}
+        {image && (
+          <div className="mb-12 -mx-6 sm:-mx-12 overflow-hidden">
+            <Image
+              data={image}
+              loading="eager"
+              className="w-full aspect-[16/9] object-cover"
+              sizes="(min-width: 768px) 800px, 100vw"
+            />
+          </div>
+        )}
+
+        {/* Body */}
+        <div
+          className="text-sm sm:text-base leading-relaxed text-muted-foreground space-y-5 [&_h2]:font-display [&_h2]:text-3xl [&_h2]:text-foreground [&_h2]:mt-12 [&_h2]:mb-4 [&_h3]:font-display [&_h3]:text-xl [&_h3]:text-foreground [&_h3]:mt-8 [&_a]:text-accent [&_a]:underline-offset-4 [&_img]:w-full [&_img]:my-8 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-6 [&_blockquote]:italic"
+          dangerouslySetInnerHTML={{__html: contentHtml}}
+        />
+
+        {/* Footer nav */}
+        <div className="mt-16 pt-8 border-t border-border">
+          <Link
+            to={`/blogs/${blogHandle}`}
+            className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Back to Journal
+          </Link>
+        </div>
+      </article>
     </div>
   );
 }
 
-// NOTE: https://shopify.dev/docs/api/storefront/latest/objects/blog#field-blog-articlebyhandle
 const ARTICLE_QUERY = `#graphql
   query Article(
     $articleHandle: String!
@@ -105,24 +103,10 @@ const ARTICLE_QUERY = `#graphql
     blog(handle: $blogHandle) {
       handle
       articleByHandle(handle: $articleHandle) {
-        handle
-        title
-        contentHtml
-        publishedAt
-        author: authorV2 {
-          name
-        }
-        image {
-          id
-          altText
-          url
-          width
-          height
-        }
-        seo {
-          description
-          title
-        }
+        handle title contentHtml publishedAt
+        author: authorV2 { name }
+        image { id altText url width height }
+        seo { description title }
       }
     }
   }

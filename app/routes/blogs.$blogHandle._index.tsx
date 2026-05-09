@@ -5,59 +5,28 @@ import type {ArticleItemFragment} from 'storefrontapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.blog.title ?? ''} blog`}];
-};
+export const meta: Route.MetaFunction = ({data}) => [
+  {title: `${data?.blog.title ?? 'Journal'} — Maison Écho`},
+  {name: 'description', content: `Dispatches from the field — ${data?.blog.title}`},
+];
 
-export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
-}
-
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
 async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
-  const paginationVariables = getPaginationVariables(request, {
-    pageBy: 4,
-  });
-
-  if (!params.blogHandle) {
-    throw new Response(`blog not found`, {status: 404});
-  }
-
+  const paginationVariables = getPaginationVariables(request, {pageBy: 9});
+  if (!params.blogHandle) throw new Response('Not found', {status: 404});
   const [{blog}] = await Promise.all([
     context.storefront.query(BLOGS_QUERY, {
-      variables: {
-        blogHandle: params.blogHandle,
-        ...paginationVariables,
-      },
+      variables: {blogHandle: params.blogHandle, ...paginationVariables},
     }),
-    // Add other queries here, so that they are loaded in parallel
   ]);
-
-  if (!blog?.articles) {
-    throw new Response('Not found', {status: 404});
-  }
-
+  if (!blog?.articles) throw new Response('Not found', {status: 404});
   redirectIfHandleIsLocalized(request, {handle: params.blogHandle, data: blog});
-
   return {blog};
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context}: Route.LoaderArgs) {
-  return {};
+function loadDeferredData(_args: Route.LoaderArgs) { return {}; }
+
+export async function loader(args: Route.LoaderArgs) {
+  return {...loadDeferredData(args), ...await loadCriticalData(args)};
 }
 
 export default function Blog() {
@@ -65,57 +34,71 @@ export default function Blog() {
   const {articles} = blog;
 
   return (
-    <div className="blog">
-      <h1>{blog.title}</h1>
-      <div className="blog-grid">
+    <div className="min-h-screen bg-background text-foreground font-sans">
+      {/* Nav */}
+      <header className="flex items-center justify-between px-6 sm:px-12 h-16 border-b border-border">
+        <Link to="/" className="font-display text-lg tracking-tight hover:text-accent transition-colors">
+          ← Maison Écho
+        </Link>
+        <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground hidden sm:inline">
+          {blog.title}
+        </span>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-6 sm:px-12 py-16 sm:py-24">
+        <div className="mb-16 sm:mb-20">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground mb-4">Journal</p>
+          <h1 className="font-display text-6xl sm:text-8xl leading-[0.88] tracking-tight">
+            {blog.title}
+          </h1>
+        </div>
+
         <PaginatedResourceSection<ArticleItemFragment> connection={articles}>
           {({node: article, index}) => (
-            <ArticleItem
-              article={article}
-              key={article.id}
-              loading={index < 2 ? 'eager' : 'lazy'}
-            />
+            <ArticleItem article={article} key={article.id} loading={index < 3 ? 'eager' : 'lazy'} />
           )}
         </PaginatedResourceSection>
-      </div>
+      </main>
     </div>
   );
 }
 
-function ArticleItem({
-  article,
-  loading,
-}: {
-  article: ArticleItemFragment;
-  loading?: HTMLImageElement['loading'];
-}) {
-  const publishedAt = new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date(article.publishedAt!));
+function ArticleItem({article, loading}: {article: ArticleItemFragment; loading?: HTMLImageElement['loading']}) {
+  const date = new Intl.DateTimeFormat('en-US', {year: 'numeric', month: 'long', day: 'numeric'})
+    .format(new Date(article.publishedAt!));
+
   return (
-    <div className="blog-article" key={article.id}>
-      <Link to={`/blogs/${article.blog.handle}/${article.handle}`}>
-        {article.image && (
-          <div className="blog-article-image">
-            <Image
-              alt={article.image.altText || article.title}
-              aspectRatio="3/2"
-              data={article.image}
-              loading={loading}
-              sizes="(min-width: 768px) 50vw, 100vw"
-            />
-          </div>
-        )}
-        <h3>{article.title}</h3>
-        <small>{publishedAt}</small>
-      </Link>
-    </div>
+    <Link
+      to={`/blogs/${article.blog.handle}/${article.handle}`}
+      className="group grid sm:grid-cols-2 gap-6 py-10 border-t border-border hover:bg-secondary/20 transition-colors duration-300 -mx-6 px-6 sm:-mx-12 sm:px-12"
+    >
+      {article.image && (
+        <div className="overflow-hidden bg-muted aspect-[3/2] sm:aspect-auto sm:h-48">
+          <Image
+            alt={article.image.altText || article.title}
+            data={article.image}
+            loading={loading}
+            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700"
+            sizes="(min-width: 768px) 50vw, 100vw"
+          />
+        </div>
+      )}
+      <div className="flex flex-col justify-center">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
+          {date}
+          {article.author?.name && <> · {article.author.name}</>}
+        </p>
+        <h2 className="font-display text-3xl sm:text-4xl leading-tight tracking-tight mb-4 group-hover:text-accent transition-colors duration-300">
+          {article.title}
+        </h2>
+        <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground group-hover:text-foreground transition-colors">
+          Read →
+        </span>
+      </div>
+    </Link>
   );
 }
 
-// NOTE: https://shopify.dev/docs/api/storefront/latest/objects/blog
 const BLOGS_QUERY = `#graphql
   query Blog(
     $language: LanguageCode
@@ -126,50 +109,21 @@ const BLOGS_QUERY = `#graphql
     $endCursor: String
   ) @inContext(language: $language) {
     blog(handle: $blogHandle) {
-      title
-      handle
-      seo {
-        title
-        description
-      }
-      articles(
-        first: $first,
-        last: $last,
-        before: $startCursor,
-        after: $endCursor
-      ) {
-        nodes {
-          ...ArticleItem
-        }
+      title handle
+      seo { title description }
+      articles(first: $first, last: $last, before: $startCursor, after: $endCursor) {
+        nodes { ...ArticleItem }
         pageInfo {
-          hasPreviousPage
-          hasNextPage
-          hasNextPage
-          endCursor
-          startCursor
+          hasPreviousPage hasNextPage endCursor startCursor
         }
-
       }
     }
   }
   fragment ArticleItem on Article {
-    author: authorV2 {
-      name
-    }
-    contentHtml
-    handle
-    id
-    image {
-      id
-      altText
-      url
-      width
-      height
-    }
-    publishedAt
-    title
-    blog {
-      handle
-    }
+    author: authorV2 { name }
+    contentHtml handle id
+    image { id altText url width height }
+    publishedAt title
+    blog { handle }
   }
 ` as const;
