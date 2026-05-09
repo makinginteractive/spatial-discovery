@@ -1,4 +1,4 @@
-import {useState, useCallback, useMemo, useEffect, useRef, Suspense} from 'react';
+import {useState, useCallback, useMemo, useRef, Suspense} from 'react';
 import {useLoaderData, useRouteLoaderData} from 'react-router';
 import {Await} from 'react-router';
 import type {Route} from './+types/_index';
@@ -31,21 +31,22 @@ export default function Index() {
 
   const [query, setQuery] = useState('');
   const [hovered, setHovered] = useState<CanvasProduct | null>(null);
-  const [mousePos, setMousePos] = useState({x: 0, y: 0});
   const [selected, setSelected] = useState<CanvasProduct | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [activeType, setActiveType] = useState<string | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const labelRef = useRef<HTMLDivElement>(null);
 
   const handleSelect = useCallback((p: CanvasProduct) => setSelected(p), []);
   const handleHover = useCallback((p: CanvasProduct | null) => setHovered(p), []);
 
-  // Track mouse for label positioning
-  useEffect(() => {
-    const handler = (e: MouseEvent) => setMousePos({x: e.clientX, y: e.clientY});
-    window.addEventListener('mousemove', handler);
-    return () => window.removeEventListener('mousemove', handler);
+  // Direct DOM update from canvas animation loop — no React re-render per frame
+  const handleHoverMove = useCallback((x: number, y: number) => {
+    if (labelRef.current) {
+      labelRef.current.style.left = `${x}px`;
+      labelRef.current.style.top = `${y - 100}px`;
+    }
   }, []);
 
   const productTypes = useMemo(() => {
@@ -93,6 +94,7 @@ export default function Index() {
         query={query}
         onSelect={handleSelect}
         onHover={handleHover}
+        onHoverMove={handleHoverMove}
       />
 
       {/* Top bar */}
@@ -147,16 +149,12 @@ export default function Index() {
         />
       </div>
 
-      {/* Hover label — follows cursor, sits above the tile */}
+      {/* Hover label — pinned to tile center via direct DOM update */}
       <div
-        className={`fixed z-20 pointer-events-none transition-opacity duration-300 ${
+        ref={labelRef}
+        className={`fixed z-20 pointer-events-none -translate-x-1/2 transition-opacity duration-300 ${
           hovered ? 'opacity-100' : 'opacity-0'
         }`}
-        style={{
-          left: mousePos.x,
-          top: mousePos.y - 90,
-          transform: 'translateX(-50%)',
-        }}
       >
         {hovered && (
           <div className="text-center whitespace-nowrap">

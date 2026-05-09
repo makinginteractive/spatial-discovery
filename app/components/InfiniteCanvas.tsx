@@ -29,6 +29,7 @@ type Props = {
   query?: string;
   onSelect?: (p: CanvasProduct) => void;
   onHover?: (p: CanvasProduct | null) => void;
+  onHoverMove?: (x: number, y: number) => void;
 };
 
 const CELL_W = 3.2;
@@ -46,6 +47,7 @@ export function InfiniteCanvas({
   query = '',
   onSelect,
   onHover,
+  onHoverMove,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const queryRef = useRef(query);
@@ -268,6 +270,16 @@ export function InfiniteCanvas({
           renderer.domElement.style.cursor = s.hoveredTile
             ? 'pointer' : s.dragging ? 'grabbing' : 'grab';
           onHover?.(s.hoveredTile ? s.products[s.hoveredTile.productIndex] : null);
+        }
+        // Project tile center to screen space each frame for label positioning
+        if (s.hoveredTile && onHoverMove) {
+          const wp = new THREE.Vector3();
+          s.hoveredTile.mesh.getWorldPosition(wp);
+          wp.project(camera);
+          const rect = renderer.domElement.getBoundingClientRect();
+          const sx = ((wp.x + 1) / 2) * rect.width + rect.left;
+          const sy = (-(wp.y - 1) / 2) * rect.height + rect.top;
+          onHoverMove(sx, sy);
         }
       }
 
