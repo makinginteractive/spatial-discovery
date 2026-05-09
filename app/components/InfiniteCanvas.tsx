@@ -222,11 +222,19 @@ export function InfiniteCanvas({
 
       // Handle transition phases
       if (s.transition === 'scatter') {
+        // First frame: assign each tile a smooth outward velocity
+        if (s.transitionTimer === 0) {
+          for (const tile of s.tiles) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 0.02 + Math.random() * 0.02;
+            tile.vx = Math.cos(angle) * speed;
+            tile.vy = Math.sin(angle) * speed;
+          }
+        }
         s.transitionTimer += 1;
-        // After 35 frames of scatter, swap products and settle
-        if (s.transitionTimer >= 35) {
+        // After 22 frames swap products and settle
+        if (s.transitionTimer >= 22) {
           s.products = s.pendingProducts!;
-          // Load new textures
           const loader2 = new THREE.TextureLoader();
           const newTextures = s.products.map((p) => {
             const tx = loader2.load(p.featuredImage?.url ?? '');
@@ -234,24 +242,18 @@ export function InfiniteCanvas({
             tx.anisotropy = 4;
             return tx;
           });
-          // Dispose old textures
           s.textures.forEach((tx) => tx.dispose());
           s.textures = newTextures;
           s.pendingProducts = null;
           s.transition = 'settle';
           s.transitionTimer = 0;
-          // Give each tile a random inward velocity to re-converge
-          for (const tile of s.tiles) {
-            tile.vx = (Math.random() - 0.5) * 0.3;
-            tile.vy = (Math.random() - 0.5) * 0.3;
-          }
+          for (const tile of s.tiles) { tile.vx = 0; tile.vy = 0; }
         }
       } else if (s.transition === 'settle') {
         s.transitionTimer += 1;
-        if (s.transitionTimer >= 40) {
+        if (s.transitionTimer >= 35) {
           s.transition = 'idle';
           s.transitionTimer = 0;
-          for (const tile of s.tiles) {tile.vx = 0; tile.vy = 0;}
         }
       }
 
@@ -299,11 +301,8 @@ export function InfiniteCanvas({
         const z = Math.sin(t * 0.6 + seed * 6.28) * 0.25 - seed * 0.4;
 
         if (s.transition === 'scatter') {
-          // Tiles scatter outward with random velocity
-          const scatterX = (Math.random() - 0.5) * 0.08;
-          const scatterY = (Math.random() - 0.5) * 0.08;
-          tile.mesh.position.x += scatterX;
-          tile.mesh.position.y += scatterY;
+          tile.mesh.position.x += tile.vx;
+          tile.mesh.position.y += tile.vy;
           tile.mesh.position.z = z;
         } else if (s.transition === 'settle') {
           // Tiles drift back to grid position
