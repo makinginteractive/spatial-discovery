@@ -18,15 +18,25 @@ export const meta: Route.MetaFunction = () => [
   {property: 'og:description', content: 'A spatial, infinite product field.'},
 ];
 
+type MenuItem = {id: string; title: string; url: string; type: string};
+
+function toPath(url: string) {
+  try { return new URL(url).pathname; } catch { return url; }
+}
+
 export async function loader({context}: Route.LoaderArgs) {
-  const {products} = await context.storefront.query(CANVAS_PRODUCTS_QUERY, {
-    variables: {first: 48},
-  });
-  return {products: products.nodes as CanvasProduct[]};
+  const [{products}, {menu}] = await Promise.all([
+    context.storefront.query(CANVAS_PRODUCTS_QUERY, {variables: {first: 48}}),
+    context.storefront.query(MENU_QUERY, {variables: {handle: 'main-menu'}}),
+  ]);
+  return {
+    products: products.nodes as CanvasProduct[],
+    menuItems: (menu?.items ?? []) as MenuItem[],
+  };
 }
 
 export default function Index() {
-  const {products} = useLoaderData<typeof loader>();
+  const {products, menuItems} = useLoaderData<typeof loader>();
   const rootData = useRouteLoaderData<RootLoader>('root');
 
   const [query, setQuery] = useState('');
@@ -112,9 +122,17 @@ export default function Index() {
           )}
         </div>
         <nav className="flex items-center gap-5 sm:gap-7 text-[10px] uppercase tracking-[0.3em] text-muted-foreground pointer-events-auto">
-          <a href="/about" className="hover:text-foreground transition-colors">About</a>
-          <a href="/journal" className="hidden sm:inline hover:text-foreground transition-colors">Journal</a>
-          <a href="/contact" className="hover:text-foreground transition-colors">Contact</a>
+          {menuItems
+            .filter((item) => item.type !== 'FRONTPAGE')
+            .map((item) => (
+              <a
+                key={item.id}
+                href={toPath(item.url)}
+                className="hover:text-foreground transition-colors"
+              >
+                {item.title}
+              </a>
+            ))}
         </nav>
       </header>
 
@@ -229,12 +247,17 @@ export default function Index() {
             {activeType ?? 'Collections'}
           </button>
 
-          <a
-            href="/journal"
-            className="hidden sm:inline px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition-colors rounded-full"
-          >
-            Journal
-          </a>
+          {menuItems
+            .filter((item) => item.type !== 'FRONTPAGE' && item.type !== 'CATALOG')
+            .map((item) => (
+              <a
+                key={item.id}
+                href={toPath(item.url)}
+                className="hidden sm:inline px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition-colors rounded-full"
+              >
+                {item.title}
+              </a>
+            ))}
 
           <div className="w-px h-4 bg-border mx-1" />
 
@@ -242,9 +265,10 @@ export default function Index() {
             fallback={
               <button
                 onClick={() => setCartOpen(true)}
-                className="px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition-colors rounded-full"
+                className="relative px-3 py-2 text-muted-foreground hover:text-foreground transition-colors rounded-full"
+                aria-label="Open bag"
               >
-                Bag
+                <BagIcon />
               </button>
             }
           >
@@ -254,9 +278,10 @@ export default function Index() {
                 return (
                   <button
                     onClick={() => setCartOpen(true)}
-                    className="relative px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition-colors rounded-full"
+                    className="relative px-3 py-2 text-muted-foreground hover:text-foreground transition-colors rounded-full"
+                    aria-label="Open bag"
                   >
-                    Bag
+                    <BagIcon />
                     {count > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-accent text-accent-foreground text-[9px] rounded-full flex items-center justify-center px-1 font-sans font-medium leading-none">
                         {count}
@@ -277,6 +302,39 @@ export default function Index() {
     </main>
   );
 }
+
+function BagIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <path d="M16 10a4 4 0 01-8 0" />
+    </svg>
+  );
+}
+
+const MENU_QUERY = `#graphql
+  query MainMenu($handle: String!) {
+    menu(handle: $handle) {
+      items {
+        id
+        title
+        url
+        type
+      }
+    }
+  }
+` as const;
 
 const CANVAS_PRODUCTS_QUERY = `#graphql
   query CanvasProducts($first: Int!) {
