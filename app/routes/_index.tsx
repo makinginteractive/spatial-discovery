@@ -25,18 +25,20 @@ function toPath(url: string) {
 }
 
 export async function loader({context}: Route.LoaderArgs) {
-  const [{products}, {menu}] = await Promise.all([
+  const [{products}, {menu}, {collection: promoCollection}] = await Promise.all([
     context.storefront.query(CANVAS_PRODUCTS_QUERY, {variables: {first: 48}}),
     context.storefront.query(MENU_QUERY, {variables: {handle: 'main-menu'}}),
+    context.storefront.query(CART_PROMO_QUERY, {variables: {handle: 'cart-promo'}}),
   ]);
   return {
     products: products.nodes as CanvasProduct[],
     menuItems: (menu?.items ?? []) as MenuItem[],
+    promoProducts: promoCollection?.products?.nodes ?? [],
   };
 }
 
 export default function Index() {
-  const {products, menuItems} = useLoaderData<typeof loader>();
+  const {products, menuItems, promoProducts} = useLoaderData<typeof loader>();
   const rootData = useRouteLoaderData<RootLoader>('root');
 
   const [query, setQuery] = useState('');
@@ -345,7 +347,7 @@ export default function Index() {
                 className="relative px-3 py-2 text-muted-foreground hover:text-foreground transition-colors rounded-full"
                 aria-label="Open bag"
               >
-                <BagIcon />
+                <CartIcon />
               </button>
             }
           >
@@ -358,7 +360,7 @@ export default function Index() {
                     className="relative px-3 py-2 text-muted-foreground hover:text-foreground transition-colors rounded-full"
                     aria-label="Open bag"
                   >
-                    <BagIcon />
+                    <CartIcon />
                     {count > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-accent text-accent-foreground text-[9px] rounded-full flex items-center justify-center px-1 font-sans font-medium leading-none">
                         {count}
@@ -373,14 +375,14 @@ export default function Index() {
       </div>
 
       <ProductOverlay product={selected} onClose={() => setSelected(null)} />
-      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} promoProducts={promoProducts} />
 
       <h1 className="sr-only">Maison Écho — An infinite, spatial store</h1>
     </main>
   );
 }
 
-function BagIcon() {
+function CartIcon() {
   return (
     <svg
       width="16"
@@ -393,9 +395,9 @@ function BagIcon() {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <path d="M16 10a4 4 0 01-8 0" />
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.61L23 6H6" />
     </svg>
   );
 }
@@ -408,6 +410,22 @@ const MENU_QUERY = `#graphql
         title
         url
         type
+      }
+    }
+  }
+` as const;
+
+const CART_PROMO_QUERY = `#graphql
+  query CartPromo($handle: String!, $country: CountryCode, $language: LanguageCode)
+  @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      products(first: 4) {
+        nodes {
+          id title handle
+          priceRange { minVariantPrice { amount currencyCode } }
+          featuredImage { url altText }
+          variants(first: 1) { nodes { id availableForSale } }
+        }
       }
     }
   }
