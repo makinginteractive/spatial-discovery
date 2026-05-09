@@ -1,5 +1,5 @@
 import {useState, useCallback, useMemo, useRef, useEffect, Suspense} from 'react';
-import {useLoaderData, useRouteLoaderData} from 'react-router';
+import {useLoaderData, useRouteLoaderData, useNavigate} from 'react-router';
 import {Await} from 'react-router';
 import type {Route} from './+types/_index';
 import type {RootLoader} from '~/root';
@@ -25,20 +25,35 @@ function toPath(url: string) {
 }
 
 export async function loader({context}: Route.LoaderArgs) {
-  const [{products}, {menu}, {collection: promoCollection}] = await Promise.all([
+  const [
+    {products},
+    {menu},
+    {collection: promoCollection},
+    {metaobject: siteSettings},
+  ] = await Promise.all([
     context.storefront.query(CANVAS_PRODUCTS_QUERY, {variables: {first: 48}}),
     context.storefront.query(MENU_QUERY, {variables: {handle: 'main-menu'}}),
     context.storefront.query(CART_PROMO_QUERY, {variables: {handle: 'cart-promo'}}),
+    context.storefront.query(SITE_SETTINGS_QUERY),
   ]);
+
+  // Parse metaobject fields into a plain object
+  const settings: Record<string, string> = {};
+  for (const field of siteSettings?.fields ?? []) {
+    settings[field.key] = field.value;
+  }
+
   return {
     products: products.nodes as CanvasProduct[],
     menuItems: (menu?.items ?? []) as MenuItem[],
     promoProducts: promoCollection?.products?.nodes ?? [],
+    settings,
   };
 }
 
 export default function Index() {
-  const {products, menuItems, promoProducts} = useLoaderData<typeof loader>();
+  const {products, menuItems, promoProducts, settings} = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
   const rootData = useRouteLoaderData<RootLoader>('root');
 
   const [query, setQuery] = useState('');
@@ -146,7 +161,7 @@ export default function Index() {
             </span>
           ) : (
             <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-              Edition 01
+              {settings.tagline ?? 'Edition 01'}
             </span>
           )}
         </div>
@@ -192,6 +207,13 @@ export default function Index() {
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && query.trim()) {
+                  navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+                  setSearchOpen(false);
+                  setQuery('');
+                }
+              }}
               placeholder="Search the field…"
               className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground/50 focus:outline-none font-sans min-w-0"
             />
@@ -235,6 +257,17 @@ export default function Index() {
                 </div>
               </button>
             ))}
+            {/* Full results link */}
+            <button
+              onClick={() => {
+                navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+                setSearchOpen(false);
+                setQuery('');
+              }}
+              className="w-full px-4 py-2.5 text-[9px] uppercase tracking-[0.3em] text-accent hover:bg-muted/30 transition-colors text-center border-t border-border/60"
+            >
+              See all results for "{query}" →
+            </button>
           </div>
         )}
 
@@ -411,6 +444,14 @@ const MENU_QUERY = `#graphql
         url
         type
       }
+    }
+  }
+` as const;
+
+const SITE_SETTINGS_QUERY = `#graphql
+  query SiteSettings {
+    metaobject(handle: {handle: "site-settings", type: "site_settings"}) {
+      fields { key value }
     }
   }
 ` as const;
