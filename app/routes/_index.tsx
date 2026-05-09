@@ -153,7 +153,7 @@ export default function Index() {
 
       {/* Top bar */}
       <header className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-5 sm:px-10 h-16 pointer-events-none">
-        <div className="flex items-baseline gap-3 pointer-events-auto">
+        <div className={`${searchOpen ? 'hidden sm:flex' : 'flex'} items-baseline gap-3 pointer-events-auto`}>
           <span className="font-display text-xl tracking-tight">Maison Écho</span>
           {activeType ? (
             <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-accent">
@@ -165,7 +165,7 @@ export default function Index() {
             </span>
           )}
         </div>
-        <nav className="flex items-center gap-5 sm:gap-7 text-[10px] uppercase tracking-[0.3em] text-muted-foreground pointer-events-auto">
+        <nav className={`${searchOpen ? 'hidden sm:flex' : 'flex'} items-center gap-5 sm:gap-7 text-[10px] uppercase tracking-[0.3em] text-muted-foreground pointer-events-auto`}>
           {menuItems
             .filter((item) => item.type !== 'FRONTPAGE')
             .map((item) => (
@@ -189,7 +189,7 @@ export default function Index() {
         <div
           className={`flex items-center gap-2.5 bg-card/80 backdrop-blur-md border border-border rounded-full shadow-sm transition-all duration-300 overflow-hidden h-10 ${
             searchOpen
-              ? 'w-[min(400px,calc(100vw-3rem))] px-4 border-accent/40'
+              ? 'w-[min(420px,calc(100vw-2rem))] px-4 border-accent/40'
               : 'w-auto px-4 cursor-pointer hover:border-accent/60'
           }`}
           onClick={() => !searchOpen && setSearchOpen(true)}
@@ -215,7 +215,7 @@ export default function Index() {
                 }
               }}
               placeholder="Search the field…"
-              className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground/50 focus:outline-none font-sans min-w-0"
+              className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0 border-0 outline-none font-sans min-w-0 appearance-none"
             />
           ) : (
             <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
@@ -235,7 +235,7 @@ export default function Index() {
 
         {/* Live results */}
         {searchOpen && searchResults.length > 0 && (
-          <div className="mt-2 w-[min(400px,calc(100vw-3rem))] bg-card/90 backdrop-blur-md border border-border rounded-2xl overflow-hidden shadow-lg">
+          <div className="mt-2 w-[min(420px,calc(100vw-2rem))] bg-card/90 backdrop-blur-md border border-border rounded-2xl overflow-hidden shadow-lg">
             {searchResults.map((product) => (
               <button
                 key={product.id}
@@ -273,7 +273,7 @@ export default function Index() {
 
         {/* No results */}
         {searchOpen && query.trim() && searchResults.length === 0 && (
-          <div className="mt-2 w-[min(400px,calc(100vw-3rem))] bg-card/90 backdrop-blur-md border border-border rounded-2xl px-4 py-3 text-center">
+          <div className="mt-2 w-[min(420px,calc(100vw-2rem))] bg-card/90 backdrop-blur-md border border-border rounded-2xl px-4 py-3 text-center">
             <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Nothing found</span>
           </div>
         )}
