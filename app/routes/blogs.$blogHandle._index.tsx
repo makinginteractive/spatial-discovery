@@ -11,7 +11,7 @@ export const meta: Route.MetaFunction = ({data}) => [
 ];
 
 async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
-  const paginationVariables = getPaginationVariables(request, {pageBy: 9});
+  const paginationVariables = getPaginationVariables(request, {pageBy: 10});
   if (!params.blogHandle) throw new Response('Not found', {status: 404});
   const [{blog}] = await Promise.all([
     context.storefront.query(BLOGS_QUERY, {
@@ -31,70 +31,181 @@ export async function loader(args: Route.LoaderArgs) {
 
 export default function Blog() {
   const {blog} = useLoaderData<typeof loader>();
-  const {articles} = blog;
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
-      {/* Nav */}
-      <header className="flex items-center justify-between px-6 sm:px-12 h-16 border-b border-border">
-        <Link to="/" className="font-display text-lg tracking-tight hover:text-accent transition-colors">
+
+      {/* Floating nav — sits over the hero image */}
+      <header className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-6 sm:px-12 h-16">
+        <Link
+          to="/"
+          className="font-display text-lg tracking-tight text-white/90 hover:text-white transition-colors drop-shadow"
+        >
           ← Maison Écho
         </Link>
-        <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground hidden sm:inline">
+        <span className="text-[10px] uppercase tracking-[0.3em] text-white/60 drop-shadow hidden sm:inline">
           {blog.title}
         </span>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 sm:px-12 py-16 sm:py-24">
-        <div className="mb-16 sm:mb-20">
-          <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground mb-4">Journal</p>
-          <h1 className="font-display text-6xl sm:text-8xl leading-[0.88] tracking-tight">
-            {blog.title}
-          </h1>
-        </div>
+      {/* Featured hero — newest article, full bleed */}
+      <PaginatedResourceSection<ArticleItemFragment> connection={blog.articles}>
+        {({node: article, index}) => {
+          if (index === 0) return <FeaturedArticle key={article.id} article={article} />;
 
-        <PaginatedResourceSection<ArticleItemFragment> connection={articles}>
-          {({node: article, index}) => (
-            <ArticleItem article={article} key={article.id} loading={index < 3 ? 'eager' : 'lazy'} />
-          )}
+          // All remaining articles go into the grid rendered below — return null here
+          return null;
+        }}
+      </PaginatedResourceSection>
+
+      {/* Grid section */}
+      <section className="max-w-7xl mx-auto px-6 sm:px-12 py-16 sm:py-24">
+        {blog.articles.nodes.length > 1 && (
+          <div className="flex items-center gap-6 mb-12">
+            <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground shrink-0">
+              More from the journal
+            </p>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+        )}
+
+        <PaginatedResourceSection<ArticleItemFragment>
+          connection={blog.articles}
+          resourcesClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14"
+        >
+          {({node: article, index}) => {
+            if (index === 0) return null; // already shown in hero
+            return (
+              <ArticleCard
+                key={article.id}
+                article={article}
+                loading={index < 4 ? 'eager' : 'lazy'}
+              />
+            );
+          }}
         </PaginatedResourceSection>
-      </main>
+      </section>
     </div>
   );
 }
 
-function ArticleItem({article, loading}: {article: ArticleItemFragment; loading?: HTMLImageElement['loading']}) {
+// ── Featured hero ─────────────────────────────────────────────────────────────
+
+function FeaturedArticle({article}: {article: ArticleItemFragment}) {
+  const date = new Intl.DateTimeFormat('en-US', {year: 'numeric', month: 'long', day: 'numeric'})
+    .format(new Date(article.publishedAt!));
+  const tags: string[] = (article as any).tags ?? [];
+
+  return (
+    <Link
+      to={`/blogs/${article.blog.handle}/${article.handle}`}
+      className="relative block w-full h-[85vh] min-h-[520px] overflow-hidden group"
+    >
+      {article.image ? (
+        <Image
+          data={article.image}
+          loading="eager"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.025]"
+          sizes="100vw"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-muted" />
+      )}
+
+      {/* Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/35" />
+
+      {/* Content */}
+      <div className="absolute bottom-0 inset-x-0 px-6 sm:px-12 lg:px-20 pb-14 sm:pb-20">
+        <div className="max-w-3xl">
+          {tags.length > 0 && (
+            <span className="inline-block text-[9px] uppercase tracking-[0.45em] text-white/55 mb-4">
+              {tags[0]}
+            </span>
+          )}
+          <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl text-white leading-[0.92] tracking-tight mb-5">
+            {article.title}
+          </h1>
+          {(article as any).excerpt && (
+            <p className="text-white/65 text-sm sm:text-base leading-relaxed max-w-xl mb-6 line-clamp-2">
+              {(article as any).excerpt}
+            </p>
+          )}
+          <div className="flex items-center gap-4 text-[10px] uppercase tracking-[0.3em] text-white/45">
+            <time dateTime={article.publishedAt!}>{date}</time>
+            {article.author?.name && (
+              <><span>·</span><span>{article.author.name}</span></>
+            )}
+            <span className="ml-auto text-white/65 group-hover:text-white transition-colors duration-300">
+              Read →
+            </span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// ── Article grid card ─────────────────────────────────────────────────────────
+
+function ArticleCard({
+  article,
+  loading,
+}: {
+  article: ArticleItemFragment;
+  loading?: HTMLImageElement['loading'];
+}) {
   const date = new Intl.DateTimeFormat('en-US', {year: 'numeric', month: 'long', day: 'numeric'})
     .format(new Date(article.publishedAt!));
 
   return (
     <Link
       to={`/blogs/${article.blog.handle}/${article.handle}`}
-      className="group grid sm:grid-cols-2 gap-6 py-10 border-t border-border hover:bg-secondary/20 transition-colors duration-300 -mx-6 px-6 sm:-mx-12 sm:px-12"
+      className="group flex flex-col"
     >
-      {article.image && (
-        <div className="overflow-hidden bg-muted aspect-[3/2] sm:aspect-auto sm:h-48">
+      {/* Image */}
+      <div className="overflow-hidden bg-muted aspect-[4/3] mb-5">
+        {article.image ? (
           <Image
             alt={article.image.altText || article.title}
             data={article.image}
             loading={loading}
-            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700"
-            sizes="(min-width: 768px) 50vw, 100vw"
+            className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700"
+            sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
           />
-        </div>
-      )}
-      <div className="flex flex-col justify-center">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
-          {date}
-          {article.author?.name && <> · {article.author.name}</>}
-        </p>
-        <h2 className="font-display text-3xl sm:text-4xl leading-tight tracking-tight mb-4 group-hover:text-accent transition-colors duration-300">
-          {article.title}
-        </h2>
-        <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground group-hover:text-foreground transition-colors">
-          Read →
-        </span>
+        ) : (
+          <div className="w-full h-full" />
+        )}
       </div>
+
+      {/* Tags */}
+      {((article as any).tags ?? []).length > 0 && (
+        <span className="text-[9px] uppercase tracking-[0.4em] text-accent mb-2">
+          {(article as any).tags[0]}
+        </span>
+      )}
+
+      {/* Meta */}
+      <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground mb-2.5">
+        <time dateTime={article.publishedAt!}>{date}</time>
+        {article.author?.name && <> · {article.author.name}</>}
+      </p>
+
+      {/* Title */}
+      <h2 className="font-display text-2xl sm:text-3xl leading-tight tracking-tight mb-3 group-hover:text-accent transition-colors duration-300">
+        {article.title}
+      </h2>
+
+      {/* Excerpt */}
+      {(article as any).excerpt && (
+        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 mb-4">
+          {(article as any).excerpt}
+        </p>
+      )}
+
+      <span className="mt-auto text-[9px] uppercase tracking-[0.3em] text-muted-foreground group-hover:text-foreground transition-colors">
+        Read →
+      </span>
     </Link>
   );
 }
@@ -121,7 +232,7 @@ const BLOGS_QUERY = `#graphql
   }
   fragment ArticleItem on Article {
     author: authorV2 { name }
-    contentHtml handle id
+    contentHtml excerpt handle id tags
     image { id altText url width height }
     publishedAt title
     blog { handle }
