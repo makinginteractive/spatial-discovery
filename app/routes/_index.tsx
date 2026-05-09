@@ -6,6 +6,7 @@ import type {RootLoader} from '~/root';
 import {InfiniteCanvas, type CanvasProduct} from '~/components/InfiniteCanvas';
 import {ProductOverlay} from '~/components/ProductOverlay';
 import {CartDrawer} from '~/components/CartDrawer';
+import {PolicyBar} from '~/components/PolicyBar';
 
 export const meta: Route.MetaFunction = () => [
   {title: 'P3XIV — Press On'},
@@ -60,13 +61,14 @@ export default function Index() {
   const [hovered, setHovered] = useState<CanvasProduct | null>(null);
   const [selected, setSelected] = useState<CanvasProduct | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
-  const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const [activeType, setActiveType] = useState<string | null>(null);
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const labelRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
 
   const handleSelect = useCallback((p: CanvasProduct) => setSelected(p), []);
   const handleHover = useCallback((p: CanvasProduct | null) => setHovered(p), []);
@@ -113,27 +115,22 @@ export default function Index() {
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [searchOpen]);
 
-  function openCollections() {
-    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-    setCollectionsOpen(true);
-  }
-
-  function scheduleClose() {
-    closeTimerRef.current = setTimeout(() => setCollectionsOpen(false), 180);
-  }
-
-  function handleTypeSelect(type: string) {
-    setActiveType(activeType === type ? null : type);
-    setCollectionsOpen(false);
-  }
-
-  function handleFieldClick() {
-    setActiveType(null);
-    setCollectionsOpen(false);
-  }
+  useEffect(() => {
+    if (!accountOpen) return;
+    function handleOutside(e: MouseEvent) {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
+        setAccountOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [accountOpen]);
 
   return (
     <main className="fixed inset-0 grain overflow-hidden">
+      <PolicyBar />
+      <InfoPanel open={infoOpen} onClose={() => setInfoOpen(false)} />
+
       {/* Radial vignette */}
       <div
         className="absolute inset-0 pointer-events-none z-10"
@@ -153,30 +150,15 @@ export default function Index() {
 
       {/* Top bar */}
       <header className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-5 sm:px-10 h-16 pointer-events-none">
-        <div className={`${searchOpen ? 'hidden sm:flex' : 'flex'} items-baseline gap-3 pointer-events-auto`}>
-          <span className="font-display text-xl tracking-tight">P3XIV</span>
-          {activeType ? (
-            <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-accent">
-              {activeType}
-            </span>
-          ) : (
-            <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-              {settings.tagline ?? 'Edition 01'}
-            </span>
-          )}
-        </div>
+        <a
+          href="/"
+          className={`${searchOpen ? 'hidden sm:block' : 'block'} font-display text-2xl tracking-tight pointer-events-auto hover:opacity-70 transition-opacity`}
+        >
+          P3XIV
+        </a>
         <nav className={`${searchOpen ? 'hidden sm:flex' : 'flex'} items-center gap-5 sm:gap-7 text-[10px] uppercase tracking-[0.3em] text-muted-foreground pointer-events-auto`}>
-          {menuItems
-            .filter((item) => item.type !== 'FRONTPAGE')
-            .map((item) => (
-              <a
-                key={item.id}
-                href={toPath(item.url)}
-                className="hover:text-foreground transition-colors"
-              >
-                {item.title}
-              </a>
-            ))}
+          <a href="/pages/contact" className="hover:text-foreground transition-colors">Contact</a>
+          <a href="/policies/refund-policy" className="hover:text-foreground transition-colors">Returns</a>
         </nav>
       </header>
 
@@ -308,84 +290,73 @@ export default function Index() {
         )}
       </div>
 
-      {/* Bottom cluster — hover opens collection pills */}
-      <div
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
-        onMouseLeave={scheduleClose}
-        onMouseEnter={() => {
-          if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-        }}
-      >
-        {/* Collection type pills */}
-        <div
-          className={`transition-all duration-300 ${
-            collectionsOpen
-              ? 'opacity-100 translate-y-0 pointer-events-auto'
-              : 'opacity-0 translate-y-2 pointer-events-none'
-          }`}
-        >
-          <div className="flex items-center gap-1.5 flex-wrap justify-center max-w-[min(520px,calc(100vw-2rem))]">
-            {productTypes.map((type) => (
-              <button
-                key={type}
-                onClick={() => handleTypeSelect(type)}
-                className={`px-3.5 py-1.5 text-[10px] uppercase tracking-[0.2em] rounded-full border transition-colors duration-200 ${
-                  activeType === type
-                    ? 'bg-accent text-accent-foreground border-accent'
-                    : 'bg-card/80 backdrop-blur-md border-border hover:border-accent hover:text-accent'
-                }`}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-
+      {/* Bottom cluster */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5">
         {/* Menu pill */}
         <div className="flex items-center bg-card/80 backdrop-blur-md border border-border rounded-full px-1 py-1 shadow-lg gap-0.5">
-          <button
-            onClick={handleFieldClick}
-            className={`px-4 py-2 text-[10px] uppercase tracking-[0.25em] rounded-full transition-colors ${
-              !activeType && !collectionsOpen
-                ? 'text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Field
-          </button>
-
-          <button
-            onMouseEnter={openCollections}
-            onClick={() => setCollectionsOpen((o) => !o)}
-            className={`px-4 py-2 text-[10px] uppercase tracking-[0.25em] rounded-full transition-colors ${
-              collectionsOpen || activeType
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {activeType ?? 'Collections'}
-          </button>
-
-          {menuItems
-            .filter((item) => item.type !== 'FRONTPAGE' && item.type !== 'CATALOG')
-            .map((item) => (
-              <a
-                key={item.id}
-                href={toPath(item.url)}
-                className="hidden sm:inline px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition-colors rounded-full"
+          {/* Account */}
+          <div ref={accountRef} className="relative">
+            <button
+              onClick={() => setAccountOpen((o) => !o)}
+              onMouseEnter={() => setAccountOpen(true)}
+              onMouseLeave={() => setAccountOpen(false)}
+              className="px-3 py-2 text-muted-foreground hover:text-foreground transition-colors rounded-full"
+              aria-label="Account"
+            >
+              <AccountIcon />
+            </button>
+            {accountOpen && (
+              <div
+                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden min-w-[140px]"
+                onMouseEnter={() => setAccountOpen(true)}
+                onMouseLeave={() => setAccountOpen(false)}
               >
-                {item.title}
-              </a>
-            ))}
+                <a
+                  href="/account/login"
+                  className="block px-4 py-2.5 text-[10px] uppercase tracking-[0.25em] hover:bg-muted transition-colors"
+                >
+                  Log In
+                </a>
+                <a
+                  href="/account/login?flow=register"
+                  className="block px-4 py-2.5 text-[10px] uppercase tracking-[0.25em] hover:bg-muted transition-colors border-t border-border"
+                >
+                  Create Account
+                </a>
+              </div>
+            )}
+          </div>
+
+          <a
+            href="/collections/all"
+            className="px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition-colors rounded-full"
+          >
+            Shop
+          </a>
+
+          <a
+            href="/collections"
+            className="px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition-colors rounded-full"
+          >
+            Collections
+          </a>
+
+          <a
+            href="/blogs/news"
+            className="px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition-colors rounded-full"
+          >
+            Blog
+          </a>
 
           <div className="w-px h-4 bg-border mx-1" />
 
+          {/* Cart */}
           <Suspense
             fallback={
               <button
                 onClick={() => setCartOpen(true)}
                 className="relative px-3 py-2 text-muted-foreground hover:text-foreground transition-colors rounded-full"
-                aria-label="Open bag"
+                aria-label="Open cart"
               >
                 <CartIcon />
               </button>
@@ -398,7 +369,7 @@ export default function Index() {
                   <button
                     onClick={() => setCartOpen(true)}
                     className="relative px-3 py-2 text-muted-foreground hover:text-foreground transition-colors rounded-full"
-                    aria-label="Open bag"
+                    aria-label="Open cart"
                   >
                     <CartIcon />
                     {count > 0 && (
@@ -412,6 +383,15 @@ export default function Index() {
             </Await>
           </Suspense>
         </div>
+
+        {/* Info panel trigger */}
+        <button
+          onClick={() => setInfoOpen((o) => !o)}
+          className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground transition-colors mt-0.5"
+          aria-label={infoOpen ? 'Close info' : 'Open info'}
+        >
+          {infoOpen ? '↓' : '↑'}
+        </button>
       </div>
 
       <ProductOverlay product={selected} onClose={() => setSelected(null)} />
@@ -439,6 +419,90 @@ function CartIcon() {
       <circle cx="20" cy="21" r="1" />
       <path d="M1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.61L23 6H6" />
     </svg>
+  );
+}
+
+function AccountIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden="true">
+      <circle cx="12" cy="8" r="4"/>
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+    </svg>
+  );
+}
+
+function InfoPanel({open, onClose}: {open: boolean; onClose: () => void}) {
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-40 transition-opacity duration-500 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={onClose}
+      />
+      {/* Panel */}
+      <div
+        className={`fixed bottom-0 inset-x-0 z-50 bg-black transition-transform duration-500 ${open ? 'translate-y-0' : 'translate-y-full'}`}
+        style={{height: 'clamp(360px, 55vh, 520px)'}}
+      >
+        <div className="flex flex-col h-full px-6 sm:px-10 py-8">
+          {/* Main content */}
+          <div className="flex-1 flex items-start justify-between gap-8">
+            {/* Left: Brand */}
+            <div>
+              <p className="font-display text-5xl sm:text-7xl text-white leading-none">P3XIV</p>
+              <p className="text-[10px] uppercase tracking-[0.4em] text-white/50 mt-2">Press On</p>
+              <a
+                href="mailto:hello@press-on.co"
+                className="block text-sm text-white/60 hover:text-white transition-colors mt-5"
+              >
+                hello@press-on.co
+              </a>
+            </div>
+            {/* Right: Social */}
+            <div className="flex flex-col items-end gap-3 pt-1">
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-display text-xl sm:text-2xl text-white hover:text-white/60 transition-colors"
+              >
+                Instagram
+              </a>
+              <a
+                href="https://tiktok.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-display text-xl sm:text-2xl text-white hover:text-white/60 transition-colors"
+              >
+                TikTok
+              </a>
+            </div>
+          </div>
+          {/* Bottom: Policy strip */}
+          <div className="border-t border-white/10 pt-4 flex flex-wrap items-center gap-x-4 gap-y-1">
+            {[
+              {label: 'Privacy', href: '/policies/privacy-policy'},
+              {label: 'Shipping', href: '/policies/shipping-policy'},
+              {label: 'Returns', href: '/policies/refund-policy'},
+              {label: 'Terms', href: '/policies/terms-of-service'},
+            ].map((p) => (
+              <a
+                key={p.href}
+                href={p.href}
+                className="text-[9px] uppercase tracking-[0.25em] text-white/40 hover:text-white/70 transition-colors"
+              >
+                {p.label}
+              </a>
+            ))}
+            <span className="text-[9px] uppercase tracking-[0.2em] text-white/25 ml-auto">
+              © {new Date().getFullYear()} Press On
+            </span>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
