@@ -114,7 +114,10 @@ export function InfiniteCanvas({
           map: textures[0],
           opacity: 0,
         });
-        const mesh = new THREE.Mesh(geo, mat);
+        // Start each tile at a random scattered position for the load animation
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 3 + Math.random() * 5;
+        mesh.position.set(Math.cos(angle) * dist, Math.sin(angle) * dist, (Math.random() - 0.5) * 2);
         scene.add(mesh);
         tiles.push({mesh, i, j, productIndex: 0, vx: 0, vy: 0});
       }
@@ -137,7 +140,7 @@ export function InfiniteCanvas({
       dragMoved: 0,
       raf: 0,
       clock: new THREE.Clock(),
-      transition: 'idle' as 'idle' | 'scatter' | 'settle',
+      transition: 'settle' as 'idle' | 'scatter' | 'settle',
       transitionTimer: 0,
       pendingProducts: null as CanvasProduct[] | null,
     };
