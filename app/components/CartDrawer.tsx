@@ -30,7 +30,7 @@ export function CartDrawer({open, onClose, promoProducts = []}: Props) {
         className={`absolute inset-0 bg-foreground/30 backdrop-blur-sm transition-opacity duration-500 ${open ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
       />
-      <aside
+      <div
         className={`absolute right-0 top-0 bottom-0 w-full sm:w-[420px] bg-card border-l border-border shadow-2xl transition-transform duration-500 flex flex-col ${open ? 'translate-x-0' : 'translate-x-full'}`}
         role="dialog"
         aria-label="Shopping cart"
@@ -156,7 +156,7 @@ export function CartDrawer({open, onClose, promoProducts = []}: Props) {
             }}
           </Await>
         </Suspense>
-      </aside>
+      </div>
     </div>
   );
 }
