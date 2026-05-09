@@ -45,6 +45,8 @@ export default function Index() {
   const [cartOpen, setCartOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [activeType, setActiveType] = useState<string | null>(null);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const labelRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -107,6 +109,20 @@ export default function Index() {
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [accountOpen]);
+
+  function openCollections() {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    setCollectionsOpen(true);
+  }
+
+  function scheduleClose() {
+    closeTimerRef.current = setTimeout(() => setCollectionsOpen(false), 180);
+  }
+
+  function handleTypeSelect(type: string) {
+    setActiveType(activeType === type ? null : type);
+    setCollectionsOpen(false);
+  }
 
   return (
     <main className="fixed inset-0 grain overflow-hidden">
@@ -273,7 +289,36 @@ export default function Index() {
       </div>
 
       {/* Bottom cluster */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5">
+      <div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5"
+        onMouseLeave={scheduleClose}
+        onMouseEnter={() => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current); }}
+      >
+        {/* Collection type pills — appear above nav pill on Collections hover */}
+        <div
+          className={`transition-all duration-300 ${
+            collectionsOpen
+              ? 'opacity-100 translate-y-0 pointer-events-auto'
+              : 'opacity-0 translate-y-2 pointer-events-none'
+          }`}
+        >
+          <div className="flex items-center gap-1.5 flex-wrap justify-center max-w-[min(520px,calc(100vw-2rem))]">
+            {productTypes.map((type) => (
+              <button
+                key={type}
+                onClick={() => handleTypeSelect(type)}
+                className={`px-3.5 py-1.5 text-[10px] uppercase tracking-[0.2em] rounded-full border transition-colors duration-200 ${
+                  activeType === type
+                    ? 'bg-accent text-accent-foreground border-accent'
+                    : 'bg-card/80 backdrop-blur-md border-border hover:border-accent hover:text-accent'
+                }`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Menu pill */}
         <div className="flex items-center bg-card/80 backdrop-blur-md border border-border rounded-full px-1 py-1 shadow-lg gap-0.5">
           {/* Account */}
@@ -309,19 +354,18 @@ export default function Index() {
             )}
           </div>
 
-          <a
-            href="/collections/all"
-            className="px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition-colors rounded-full"
+          {/* Collections — hover opens type filter pills */}
+          <button
+            onMouseEnter={openCollections}
+            onClick={() => setCollectionsOpen((o) => !o)}
+            className={`px-4 py-2 text-[10px] uppercase tracking-[0.25em] rounded-full transition-colors ${
+              collectionsOpen || activeType
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
           >
-            Shop
-          </a>
-
-          <a
-            href="/collections"
-            className="px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition-colors rounded-full"
-          >
-            Collections
-          </a>
+            {activeType ?? 'Collections'}
+          </button>
 
           <a
             href="/blogs/news"
@@ -369,7 +413,7 @@ export default function Index() {
         {/* Info panel trigger */}
         <button
           onClick={() => setInfoOpen((o) => !o)}
-          className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground transition-colors mt-0.5"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors leading-none"
           aria-label={infoOpen ? 'Close info' : 'Open info'}
         >
           {infoOpen ? '↓' : '↑'}
