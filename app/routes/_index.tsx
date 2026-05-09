@@ -1,4 +1,4 @@
-import {useState, useCallback, useMemo, Suspense} from 'react';
+import {useState, useCallback, useMemo, useEffect, useRef, Suspense} from 'react';
 import {useLoaderData, useRouteLoaderData} from 'react-router';
 import {Await} from 'react-router';
 import type {Route} from './+types/_index';
@@ -31,13 +31,22 @@ export default function Index() {
 
   const [query, setQuery] = useState('');
   const [hovered, setHovered] = useState<CanvasProduct | null>(null);
+  const [mousePos, setMousePos] = useState({x: 0, y: 0});
   const [selected, setSelected] = useState<CanvasProduct | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [activeType, setActiveType] = useState<string | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSelect = useCallback((p: CanvasProduct) => setSelected(p), []);
   const handleHover = useCallback((p: CanvasProduct | null) => setHovered(p), []);
+
+  // Track mouse for label positioning
+  useEffect(() => {
+    const handler = (e: MouseEvent) => setMousePos({x: e.clientX, y: e.clientY});
+    window.addEventListener('mousemove', handler);
+    return () => window.removeEventListener('mousemove', handler);
+  }, []);
 
   const productTypes = useMemo(() => {
     const types = new Set(products.map((p) => p.productType).filter(Boolean));
@@ -49,12 +58,13 @@ export default function Index() {
     return products.filter((p) => p.productType === activeType);
   }, [products, activeType]);
 
-  function handleCollectionsClick() {
-    if (collectionsOpen) {
-      setCollectionsOpen(false);
-    } else {
-      setCollectionsOpen(true);
-    }
+  function openCollections() {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    setCollectionsOpen(true);
+  }
+
+  function scheduleClose() {
+    closeTimerRef.current = setTimeout(() => setCollectionsOpen(false), 180);
   }
 
   function handleTypeSelect(type: string) {
@@ -137,50 +147,66 @@ export default function Index() {
         />
       </div>
 
-      {/* Hover label */}
+      {/* Hover label — follows cursor, sits above the tile */}
       <div
-        className={`absolute z-20 left-1/2 -translate-x-1/2 bottom-32 transition-all duration-500 pointer-events-none ${
-          hovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+        className={`fixed z-20 pointer-events-none transition-opacity duration-300 ${
+          hovered ? 'opacity-100' : 'opacity-0'
         }`}
+        style={{
+          left: mousePos.x,
+          top: mousePos.y - 90,
+          transform: 'translateX(-50%)',
+        }}
       >
         {hovered && (
-          <div className="text-center">
-            <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-1">
+          <div className="text-center whitespace-nowrap">
+            <div className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground mb-0.5">
               {hovered.productType}
             </div>
-            <div className="font-display text-3xl sm:text-4xl">{hovered.title}</div>
-            <div className="text-sm text-muted-foreground mt-1">
-              ${parseFloat(hovered.priceRange.minVariantPrice.amount)} · click to open
+            <div className="font-display text-xl sm:text-2xl leading-tight">
+              {hovered.title}
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              ${parseFloat(hovered.priceRange.minVariantPrice.amount)}
             </div>
           </div>
         )}
       </div>
 
-      {/* Collection type pills — reveal above menu pill */}
+      {/* Bottom cluster — hover opens collection pills */}
       <div
-        className={`absolute bottom-[4.5rem] left-1/2 -translate-x-1/2 z-20 transition-all duration-300 ${
-          collectionsOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-2 pointer-events-none'
-        }`}
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
+        onMouseLeave={scheduleClose}
+        onMouseEnter={() => {
+          if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+        }}
       >
-        <div className="flex items-center gap-1.5 flex-wrap justify-center max-w-[min(520px,calc(100vw-2rem))]">
-          {productTypes.map((type) => (
-            <button
-              key={type}
-              onClick={() => handleTypeSelect(type)}
-              className={`px-3.5 py-1.5 text-[10px] uppercase tracking-[0.2em] rounded-full border transition-colors duration-200 ${
-                activeType === type
-                  ? 'bg-accent text-accent-foreground border-accent'
-                  : 'bg-card/80 backdrop-blur-md border-border hover:border-accent hover:text-accent'
-              }`}
-            >
-              {type}
-            </button>
-          ))}
+        {/* Collection type pills */}
+        <div
+          className={`transition-all duration-300 ${
+            collectionsOpen
+              ? 'opacity-100 translate-y-0 pointer-events-auto'
+              : 'opacity-0 translate-y-2 pointer-events-none'
+          }`}
+        >
+          <div className="flex items-center gap-1.5 flex-wrap justify-center max-w-[min(520px,calc(100vw-2rem))]">
+            {productTypes.map((type) => (
+              <button
+                key={type}
+                onClick={() => handleTypeSelect(type)}
+                className={`px-3.5 py-1.5 text-[10px] uppercase tracking-[0.2em] rounded-full border transition-colors duration-200 ${
+                  activeType === type
+                    ? 'bg-accent text-accent-foreground border-accent'
+                    : 'bg-card/80 backdrop-blur-md border-border hover:border-accent hover:text-accent'
+                }`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Menu pill */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+        {/* Menu pill */}
         <div className="flex items-center bg-card/80 backdrop-blur-md border border-border rounded-full px-1 py-1 shadow-lg gap-0.5">
           <button
             onClick={handleFieldClick}
@@ -194,7 +220,8 @@ export default function Index() {
           </button>
 
           <button
-            onClick={handleCollectionsClick}
+            onMouseEnter={openCollections}
+            onClick={() => setCollectionsOpen((o) => !o)}
             className={`px-4 py-2 text-[10px] uppercase tracking-[0.25em] rounded-full transition-colors ${
               collectionsOpen || activeType
                 ? 'bg-primary text-primary-foreground'
@@ -246,7 +273,6 @@ export default function Index() {
       </div>
 
       <ProductOverlay product={selected} onClose={() => setSelected(null)} />
-
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
 
       <h1 className="sr-only">Maison Écho — An infinite, spatial store</h1>
