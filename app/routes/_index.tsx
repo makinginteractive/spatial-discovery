@@ -19,41 +19,23 @@ export const meta: Route.MetaFunction = () => [
   {property: 'og:description', content: 'Objects for the purposeful life.'},
 ];
 
-type MenuItem = {id: string; title: string; url: string; type: string};
-
-function toPath(url: string) {
-  try { return new URL(url).pathname; } catch { return url; }
-}
-
 export async function loader({context}: Route.LoaderArgs) {
   const [
     {products},
-    {menu},
     {collection: promoCollection},
-    {metaobject: siteSettings},
   ] = await Promise.all([
     context.storefront.query(CANVAS_PRODUCTS_QUERY, {variables: {first: 48}}),
-    context.storefront.query(MENU_QUERY, {variables: {handle: 'main-menu'}}),
     context.storefront.query(CART_PROMO_QUERY, {variables: {handle: 'cart-promo'}}),
-    context.storefront.query(SITE_SETTINGS_QUERY),
   ]);
-
-  // Parse metaobject fields into a plain object
-  const settings: Record<string, string> = {};
-  for (const field of siteSettings?.fields ?? []) {
-    settings[field.key] = field.value;
-  }
 
   return {
     products: products.nodes as CanvasProduct[],
-    menuItems: (menu?.items ?? []) as MenuItem[],
     promoProducts: promoCollection?.products?.nodes ?? [],
-    settings,
   };
 }
 
 export default function Index() {
-  const {products, menuItems, promoProducts, settings} = useLoaderData<typeof loader>();
+  const {products, promoProducts} = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const rootData = useRouteLoaderData<RootLoader>('root');
 
@@ -291,7 +273,7 @@ export default function Index() {
       </div>
 
       {/* Bottom cluster */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5">
         {/* Menu pill */}
         <div className="flex items-center bg-card/80 backdrop-blur-md border border-border rounded-full px-1 py-1 shadow-lg gap-0.5">
           {/* Account */}
@@ -505,27 +487,6 @@ function InfoPanel({open, onClose}: {open: boolean; onClose: () => void}) {
     </>
   );
 }
-
-const MENU_QUERY = `#graphql
-  query MainMenu($handle: String!) {
-    menu(handle: $handle) {
-      items {
-        id
-        title
-        url
-        type
-      }
-    }
-  }
-` as const;
-
-const SITE_SETTINGS_QUERY = `#graphql
-  query SiteSettings {
-    metaobject(handle: {handle: "site-settings", type: "site_settings"}) {
-      fields { key value }
-    }
-  }
-` as const;
 
 const CART_PROMO_QUERY = `#graphql
   query CartPromo($handle: String!, $country: CountryCode, $language: LanguageCode)
