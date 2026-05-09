@@ -189,7 +189,7 @@ export default function Index() {
         <div
           className={`flex items-center gap-2.5 bg-card/80 backdrop-blur-md border border-border rounded-full shadow-sm transition-all duration-300 overflow-hidden h-10 ${
             searchOpen
-              ? 'w-[min(420px,calc(100vw-2rem))] px-4 border-accent/40'
+              ? 'w-[min(420px,calc(100vw-2rem))] px-4'
               : 'w-auto px-4 cursor-pointer hover:border-accent/60'
           }`}
           onClick={() => !searchOpen && setSearchOpen(true)}
@@ -215,7 +215,14 @@ export default function Index() {
                 }
               }}
               placeholder="Search the field…"
-              className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0 border-0 outline-none font-sans min-w-0 appearance-none"
+              className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground/50 font-sans min-w-0"
+              style={{
+                outline: 'none',
+                border: 'none',
+                boxShadow: 'none',
+                WebkitAppearance: 'none',
+                WebkitTapHighlightColor: 'transparent',
+              }}
             />
           ) : (
             <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
