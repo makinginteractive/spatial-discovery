@@ -2,6 +2,8 @@ import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/blogs.$blogHandle.$articleHandle';
 import {Image} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {SiteHeader} from '~/components/SiteHeader';
+import {NavPill} from '~/components/NavPill';
 
 export const meta: Route.MetaFunction = ({data}) => [
   {title: `${data?.article.title ?? 'Article'} — P3XIV`},
@@ -34,7 +36,8 @@ export default function Article() {
     .format(new Date(article.publishedAt));
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans pb-28">
+      <SiteHeader />
 
       {/* Hero — full bleed with gradient + title overlay */}
       {image ? (
@@ -137,6 +140,7 @@ export default function Article() {
           )}
         </div>
       </article>
+      <NavPill mode="article" title={title} />
     </div>
   );
 }
