@@ -1,9 +1,11 @@
 import {useState, useCallback} from 'react';
-import {useLoaderData, Link, useNavigate} from 'react-router';
+import {useLoaderData, useNavigate} from 'react-router';
 import type {Route} from './+types/collections.$handle';
 import {Analytics} from '@shopify/hydrogen';
 import {InfiniteCanvas, type CanvasProduct} from '~/components/InfiniteCanvas';
 import {ProductOverlay} from '~/components/ProductOverlay';
+import {SiteHeader} from '~/components/SiteHeader';
+import {NavPill} from '~/components/NavPill';
 
 export const meta: Route.MetaFunction = ({data}) => [
   {title: `${data?.collection.title ?? 'Collection'} — P3XIV`},
@@ -62,6 +64,8 @@ export default function CollectionDetail() {
 
   return (
     <div className="fixed inset-0 bg-background text-foreground grain overflow-hidden">
+      <SiteHeader />
+
       {/* Vignette */}
       <div
         className="absolute inset-0 pointer-events-none z-10"
@@ -79,22 +83,9 @@ export default function CollectionDetail() {
         onHover={handleHover}
       />
 
-      {/* Top bar */}
-      <header className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-5 sm:px-10 h-16 pointer-events-none">
-        <div className="flex items-baseline gap-4 pointer-events-auto">
-          <Link
-            to="/collections"
-            className="font-display text-xl tracking-tight hover:text-accent transition-colors"
-          >
-            P3XIV
-          </Link>
-          <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-            {collection.title}
-          </span>
-        </div>
-
-        {/* Sort controls */}
-        <div className="flex items-center gap-1 pointer-events-auto bg-card/70 backdrop-blur-md border border-border rounded-full px-3 py-1.5">
+      {/* Sort controls — positioned below SiteHeader */}
+      <div className="absolute top-[68px] right-5 z-20 pointer-events-auto">
+        <div className="flex items-center gap-1 bg-card/70 backdrop-blur-md border border-border rounded-full px-3 py-1.5">
           {SORT_OPTIONS.map((opt) => {
             const isActive = opt.value === activeSort.value && opt.reverse === activeSort.reverse;
             return (
@@ -112,16 +103,6 @@ export default function CollectionDetail() {
             );
           })}
         </div>
-      </header>
-
-      {/* Search pill */}
-      <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 w-[min(380px,calc(100vw-14rem))] hidden lg:block">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={`Search ${collection.title.toLowerCase()}…`}
-          className="w-full h-10 bg-card/70 backdrop-blur-md border border-border rounded-full px-5 text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring/40 font-sans"
-        />
       </div>
 
       {/* Hover label */}
@@ -143,23 +124,7 @@ export default function CollectionDetail() {
         )}
       </div>
 
-      {/* Bottom nav */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
-        <div className="flex items-center gap-1 bg-card/80 backdrop-blur-md border border-border rounded-full pl-2 pr-2 py-2 shadow-lg">
-          <Link
-            to="/"
-            className="px-4 py-2 text-[10px] uppercase tracking-[0.25em] hover:text-accent transition-colors"
-          >
-            Field
-          </Link>
-          <Link
-            to="/collections"
-            className="px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-accent"
-          >
-            Collections
-          </Link>
-        </div>
-      </div>
+      <NavPill mode="collection" title={collection.title} />
 
       <ProductOverlay product={selected} onClose={() => setSelected(null)} />
 
