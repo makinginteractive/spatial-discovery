@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {redirect, useLoaderData, Link} from 'react-router';
+import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {
   getSelectedProductOptions,
@@ -10,6 +10,8 @@ import {
   CartForm,
 } from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {SiteHeader} from '~/components/SiteHeader';
+import {NavPill} from '~/components/NavPill';
 
 export const meta: Route.MetaFunction = ({data}) => [
   {title: `${data?.product.title ?? 'Product'} — P3XIV`},
@@ -58,25 +60,16 @@ export default function Product() {
   const compareAt = selectedVariant?.compareAtPrice
     ? parseFloat(selectedVariant.compareAtPrice.amount)
     : null;
-  const currency = selectedVariant?.price?.currencyCode ?? 'USD';
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
-      {/* Nav */}
-      <header className="flex items-center justify-between px-6 sm:px-12 h-16 border-b border-border">
-        <Link to="/" className="font-display text-lg tracking-tight hover:text-accent transition-colors">
-          ← P3XIV
-        </Link>
-        <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground hidden sm:inline">
-          {product.productType}
-        </span>
-      </header>
+    <div className="min-h-screen bg-background text-foreground font-sans pt-16 pb-28">
+      <SiteHeader />
 
       <div className="max-w-6xl mx-auto px-6 sm:px-12 py-12 grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
 
         {/* Image gallery */}
-        <div className="space-y-4 sticky top-12">
-          <div className="aspect-square bg-secondary/30 flex items-center justify-center overflow-hidden">
+        <div className="space-y-4 md:sticky md:top-20">
+          <div className="h-[55vh] md:aspect-square md:h-auto bg-secondary/30 flex items-center justify-center overflow-hidden">
             {images.length > 0 ? (
               <img
                 key={images[imgIdx]?.url}
@@ -139,9 +132,6 @@ export default function Product() {
                   ${compareAt}
                 </span>
               )}
-              <span className="text-xs uppercase tracking-widest text-muted-foreground">
-                {currency}
-              </span>
             </div>
           </div>
 
@@ -248,6 +238,14 @@ export default function Product() {
             },
           ],
         }}
+      />
+
+      <NavPill
+        mode="product"
+        title={product.title}
+        price={selectedVariant?.price?.amount ?? '0'}
+        variantId={selectedVariant?.id ?? ''}
+        availableForSale={selectedVariant?.availableForSale ?? false}
       />
     </div>
   );
