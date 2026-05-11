@@ -6,6 +6,7 @@ import {InfiniteCanvas, type CanvasProduct} from '~/components/InfiniteCanvas';
 import {ProductOverlay} from '~/components/ProductOverlay';
 import {SiteHeader} from '~/components/SiteHeader';
 import {NavPill} from '~/components/NavPill';
+import {PolicyBar} from '~/components/PolicyBar';
 
 export const meta: Route.MetaFunction = ({data}) => [
   {title: `${data?.collection.title ?? 'Collection'} — P3XIV`},
@@ -125,6 +126,7 @@ export default function CollectionDetail() {
       </div>
 
       <NavPill mode="collection" title={collection.title} />
+      <PolicyBar />
 
       <ProductOverlay product={selected} onClose={() => setSelected(null)} />
 

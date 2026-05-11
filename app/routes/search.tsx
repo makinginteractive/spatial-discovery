@@ -1,6 +1,7 @@
 import {useLoaderData, Link, Form} from 'react-router';
 import type {Route} from './+types/search';
 import {SiteHeader} from '~/components/SiteHeader';
+import {PolicyBar} from '~/components/PolicyBar';
 import {getPaginationVariables, Image, Money, Analytics} from '@shopify/hydrogen';
 import {urlWithTrackingParams, type RegularSearchReturn} from '~/lib/search';
 import type {RegularSearchQuery} from 'storefrontapi.generated';
@@ -192,6 +193,7 @@ export default function SearchPage() {
       )}
 
       <Analytics.SearchView data={{searchTerm: term, searchResults: result}} />
+      <PolicyBar />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {SiteHeader} from '~/components/SiteHeader';
 import {NavPill} from '~/components/NavPill';
+import {PolicyBar} from '~/components/PolicyBar';
 
 export const meta: Route.MetaFunction = ({data}) => [
   {title: `${data?.product.title ?? 'Product'} — P3XIV`},
@@ -241,6 +242,7 @@ export default function Product() {
       />
 
       <NavPill mode="product" title={product.title} />
+      <PolicyBar />
     </div>
   );
 }

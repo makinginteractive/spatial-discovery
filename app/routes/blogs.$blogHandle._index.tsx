@@ -6,6 +6,7 @@ import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {SiteHeader} from '~/components/SiteHeader';
 import {NavPill} from '~/components/NavPill';
+import {PolicyBar} from '~/components/PolicyBar';
 
 export const meta: Route.MetaFunction = ({data}) => [
   {title: `${data?.blog.title ?? 'Blog'} — P3XIV`},
@@ -78,6 +79,7 @@ export default function Blog() {
       </section>
 
       <NavPill mode="article" title={blog.title} />
+      <PolicyBar />
     </div>
   );
 }

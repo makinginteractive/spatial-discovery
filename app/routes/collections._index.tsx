@@ -2,6 +2,7 @@ import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/collections._index';
 import {SiteHeader} from '~/components/SiteHeader';
 import {NavPill} from '~/components/NavPill';
+import {PolicyBar} from '~/components/PolicyBar';
 
 export const meta: Route.MetaFunction = () => [
   {title: 'Collections — P3XIV'},
@@ -102,6 +103,7 @@ export default function CollectionsIndex() {
       </main>
 
       <NavPill mode="collection" title="Collections" />
+      <PolicyBar />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/pages.$handle';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {SiteHeader} from '~/components/SiteHeader';
+import {PolicyBar} from '~/components/PolicyBar';
 
 export const meta: Route.MetaFunction = ({data}) => [
   {title: `${data?.page.title ?? 'Page'} — P3XIV`},
@@ -40,6 +41,7 @@ export default function Page() {
           dangerouslySetInnerHTML={{__html: page.body}}
         />
       </main>
+      <PolicyBar />
     </div>
   );
 }

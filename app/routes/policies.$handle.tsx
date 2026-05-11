@@ -1,6 +1,7 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/policies.$handle';
 import {SiteHeader} from '~/components/SiteHeader';
+import {PolicyBar} from '~/components/PolicyBar';
 import {type Shop} from '@shopify/hydrogen/storefront-api-types';
 
 type SelectedPolicies = keyof Pick<
@@ -63,6 +64,7 @@ export default function Policy() {
           dangerouslySetInnerHTML={{__html: policy.body}}
         />
       </div>
+      <PolicyBar />
     </div>
   );
 }
