@@ -15,7 +15,7 @@ export function SiteHeader() {
       <form
         action="/search"
         method="get"
-        className="hidden sm:flex items-center gap-2.5 bg-card/70 border border-border rounded-full px-4 h-8 hover:border-accent/60 transition-colors"
+        className="hidden sm:flex items-center gap-2.5 bg-card/70 border border-border rounded-full px-4 h-8 hover:border-accent/60 focus-within:border-accent/60 transition-colors"
       >
         <svg
           width="11" height="11" viewBox="0 0 24 24" fill="none"
@@ -29,7 +29,7 @@ export function SiteHeader() {
           name="q"
           placeholder="Search…"
           aria-label="Search"
-          className="bg-transparent text-[11px] uppercase tracking-[0.2em] placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-full w-[100px]"
+          className="bg-transparent text-[11px] uppercase tracking-[0.2em] placeholder:text-muted-foreground/60 focus:outline-none w-[100px]"
         />
       </form>
 

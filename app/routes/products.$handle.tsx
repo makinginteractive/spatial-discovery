@@ -135,14 +135,6 @@ export default function Product() {
             </div>
           </div>
 
-          {/* Description */}
-          {product.descriptionHtml && (
-            <div
-              className="text-sm leading-relaxed text-muted-foreground max-w-md prose-p:mb-3"
-              dangerouslySetInnerHTML={{__html: product.descriptionHtml}}
-            />
-          )}
-
           {/* ATC */}
           <div className="space-y-3 pt-2">
             {selectedVariant?.availableForSale ? (
@@ -200,6 +192,14 @@ export default function Product() {
             </Link>
           </div>
 
+          {/* Description */}
+          {product.descriptionHtml && (
+            <div
+              className="text-sm leading-relaxed text-muted-foreground max-w-md prose-p:mb-3"
+              dangerouslySetInnerHTML={{__html: product.descriptionHtml}}
+            />
+          )}
+
           {/* Meta */}
           <dl className="border-t border-border pt-6 space-y-3 text-xs">
             {product.vendor && (
@@ -240,13 +240,7 @@ export default function Product() {
         }}
       />
 
-      <NavPill
-        mode="product"
-        title={product.title}
-        price={selectedVariant?.price?.amount ?? '0'}
-        variantId={selectedVariant?.id ?? ''}
-        availableForSale={selectedVariant?.availableForSale ?? false}
-      />
+      <NavPill mode="product" title={product.title} />
     </div>
   );
 }

@@ -1,32 +1,15 @@
 // app/components/NavPill.tsx
-import {useState, useRef, Suspense} from 'react';
+import {Suspense} from 'react';
 import {useRouteLoaderData, Await} from 'react-router';
-import {CartForm} from '@shopify/hydrogen';
 import type {RootLoader} from '~/root';
 
 type NavPillProps =
-  | {
-      mode: 'product';
-      title: string;
-      price: string;
-      variantId: string;
-      availableForSale: boolean;
-    }
+  | {mode: 'product'; title: string}
   | {mode: 'collection'; title: string}
   | {mode: 'article'; title: string};
 
 export function NavPill(props: NavPillProps) {
-  const [added, setAdded] = useState(false);
-  const atcTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rootData = useRouteLoaderData<RootLoader>('root');
-
-  const priceDisplay =
-    props.mode === 'product'
-      ? (() => {
-          const p = parseFloat(props.price);
-          return p % 1 === 0 ? `$${p}` : `$${p.toFixed(2)}`;
-        })()
-      : '';
 
   return (
     <div className="fixed bottom-8 inset-x-0 z-20 flex justify-center pointer-events-none">
@@ -44,42 +27,6 @@ export function NavPill(props: NavPillProps) {
         <span className="px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground max-w-[10rem] truncate select-none">
           {props.title}
         </span>
-
-        {/* Product mode: ATC */}
-        {props.mode === 'product' &&
-          (props.availableForSale ? (
-            <CartForm
-              route="/cart"
-              action={CartForm.ACTIONS.LinesAdd}
-              inputs={{lines: [{merchandiseId: props.variantId, quantity: 1}]}}
-            >
-              {(fetcher) => {
-                const isAdding = fetcher.state !== 'idle';
-                if (fetcher.state === 'idle' && fetcher.data && !added) {
-                  setAdded(true);
-                  if (atcTimeoutRef.current) clearTimeout(atcTimeoutRef.current);
-                  atcTimeoutRef.current = setTimeout(() => setAdded(false), 2500);
-                }
-                return (
-                  <button
-                    type="submit"
-                    disabled={isAdding}
-                    className={`px-4 py-2 text-[10px] uppercase tracking-[0.2em] rounded-full transition-colors whitespace-nowrap ${
-                      added
-                        ? 'bg-accent text-accent-foreground'
-                        : 'bg-primary text-primary-foreground hover:bg-accent'
-                    }`}
-                  >
-                    {isAdding ? 'Adding…' : added ? '✓ Added' : `Add to Bag ${priceDisplay}`}
-                  </button>
-                );
-              }}
-            </CartForm>
-          ) : (
-            <span className="px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground rounded-full whitespace-nowrap">
-              Sold Out
-            </span>
-          ))}
 
         <div className="w-px h-4 bg-border mx-0.5" />
 
