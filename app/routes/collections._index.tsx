@@ -30,7 +30,7 @@ export default function CollectionsIndex() {
 
       <SiteHeader />
 
-<main className="relative z-10 px-6 sm:px-12 pt-8 pb-24">
+      <main className="relative z-10 px-6 sm:px-12 pt-8 pb-24">
         <div className="mb-16 sm:mb-24">
           <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground mb-4">
             The Field
