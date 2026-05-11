@@ -29,7 +29,7 @@ export function SiteHeader() {
           name="q"
           placeholder="Search…"
           aria-label="Search"
-          className="bg-transparent text-[11px] uppercase tracking-[0.2em] placeholder:text-muted-foreground/60 focus:outline-none w-[100px]"
+          className="bg-transparent text-[11px] uppercase tracking-[0.2em] placeholder:text-muted-foreground/60 outline-none border-0 w-[100px]"
         />
       </form>
 
