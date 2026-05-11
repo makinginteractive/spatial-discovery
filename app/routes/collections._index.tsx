@@ -1,5 +1,7 @@
 import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/collections._index';
+import {SiteHeader} from '~/components/SiteHeader';
+import {NavPill} from '~/components/NavPill';
 
 export const meta: Route.MetaFunction = () => [
   {title: 'Collections — P3XIV'},
@@ -17,7 +19,7 @@ export default function CollectionsIndex() {
   const {collections} = useLoaderData<typeof loader>();
 
   return (
-    <div className="min-h-screen bg-background text-foreground grain overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground grain overflow-hidden pt-16 pb-28">
       <div
         className="fixed inset-0 pointer-events-none z-0"
         style={{
@@ -26,19 +28,9 @@ export default function CollectionsIndex() {
         }}
       />
 
-      <header className="relative z-10 flex items-center justify-between px-6 sm:px-12 h-16">
-        <Link
-          to="/"
-          className="font-display text-xl tracking-tight hover:text-accent transition-colors"
-        >
-          P3XIV
-        </Link>
-        <span className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
-          Collections
-        </span>
-      </header>
+      <SiteHeader />
 
-      <main className="relative z-10 px-6 sm:px-12 pt-8 pb-24">
+<main className="relative z-10 px-6 sm:px-12 pt-8 pb-24">
         <div className="mb-16 sm:mb-24">
           <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground mb-4">
             The Field
@@ -107,16 +99,9 @@ export default function CollectionsIndex() {
             </Link>
           </div>
         )}
-
-        <div className="mt-16">
-          <Link
-            to="/"
-            className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ← Back to the field
-          </Link>
-        </div>
       </main>
+
+      <NavPill mode="collection" title="Collections" />
     </div>
   );
 }
