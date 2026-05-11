@@ -28,7 +28,8 @@ export function SiteHeader() {
         <input
           name="q"
           placeholder="Search…"
-          className="bg-transparent text-[11px] uppercase tracking-[0.2em] placeholder:text-muted-foreground/60 focus:outline-none w-[100px]"
+          aria-label="Search"
+          className="bg-transparent text-[11px] uppercase tracking-[0.2em] placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-full w-[100px]"
         />
       </form>
 
