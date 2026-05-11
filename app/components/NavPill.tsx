@@ -1,5 +1,5 @@
 // app/components/NavPill.tsx
-import {useState, Suspense} from 'react';
+import {useState, useRef, Suspense} from 'react';
 import {useRouteLoaderData, Await} from 'react-router';
 import {CartForm} from '@shopify/hydrogen';
 import type {RootLoader} from '~/root';
@@ -9,7 +9,6 @@ type NavPillProps =
       mode: 'product';
       title: string;
       price: string;
-      currency: string;
       variantId: string;
       availableForSale: boolean;
     }
@@ -18,6 +17,7 @@ type NavPillProps =
 
 export function NavPill(props: NavPillProps) {
   const [added, setAdded] = useState(false);
+  const atcTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rootData = useRouteLoaderData<RootLoader>('root');
 
   const priceDisplay =
@@ -57,7 +57,8 @@ export function NavPill(props: NavPillProps) {
                 const isAdding = fetcher.state !== 'idle';
                 if (fetcher.state === 'idle' && fetcher.data && !added) {
                   setAdded(true);
-                  setTimeout(() => setAdded(false), 2500);
+                  if (atcTimeoutRef.current) clearTimeout(atcTimeoutRef.current);
+                  atcTimeoutRef.current = setTimeout(() => setAdded(false), 2500);
                 }
                 return (
                   <button
