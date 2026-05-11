@@ -1,5 +1,6 @@
 import {useLoaderData, Link, Form} from 'react-router';
 import type {Route} from './+types/search';
+import {SiteHeader} from '~/components/SiteHeader';
 import {getPaginationVariables, Image, Money, Analytics} from '@shopify/hydrogen';
 import {urlWithTrackingParams, type RegularSearchReturn} from '~/lib/search';
 import type {RegularSearchQuery} from 'storefrontapi.generated';
@@ -32,19 +33,8 @@ export default function SearchPage() {
   const total = result?.total ?? 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
-
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 sm:px-12 h-16 flex items-center justify-between">
-          <Link to="/" className="font-display text-lg tracking-tight hover:text-accent transition-colors">
-            ← P3XIV
-          </Link>
-          <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground hidden sm:inline">
-            Search
-          </span>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background text-foreground font-sans pt-16">
+      <SiteHeader />
 
       {/* Search form */}
       <div className="max-w-6xl mx-auto px-6 sm:px-12 py-12 sm:py-16">

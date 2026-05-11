@@ -1,6 +1,7 @@
 import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/pages.$handle';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {SiteHeader} from '~/components/SiteHeader';
 
 export const meta: Route.MetaFunction = ({data}) => [
   {title: `${data?.page.title ?? 'Page'} — P3XIV`},
@@ -27,16 +28,8 @@ export default function Page() {
   const {page} = useLoaderData<typeof loader>();
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
-      {/* Nav */}
-      <header className="flex items-center justify-between px-6 sm:px-12 h-16 border-b border-border">
-        <Link to="/" className="font-display text-lg tracking-tight hover:text-accent transition-colors">
-          ← P3XIV
-        </Link>
-        <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground hidden sm:inline">
-          {page.title}
-        </span>
-      </header>
+    <div className="min-h-screen bg-background text-foreground font-sans pt-16">
+      <SiteHeader />
 
       <main className="max-w-2xl mx-auto px-6 sm:px-12 py-16 sm:py-24">
         <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground mb-6">
