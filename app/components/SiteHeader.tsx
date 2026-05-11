@@ -29,7 +29,8 @@ export function SiteHeader() {
           name="q"
           placeholder="Search…"
           aria-label="Search"
-          className="bg-transparent text-[11px] uppercase tracking-[0.2em] placeholder:text-muted-foreground/60 outline-none border-0 w-[100px]"
+          className="bg-transparent text-[11px] uppercase tracking-[0.2em] placeholder:text-muted-foreground/60 w-[100px]"
+          style={{outline: 'none', border: 'none', boxShadow: 'none', WebkitAppearance: 'none', WebkitTapHighlightColor: 'transparent'}}
         />
       </form>
 
