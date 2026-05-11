@@ -4,6 +4,8 @@ import {Image, getPaginationVariables} from '@shopify/hydrogen';
 import type {ArticleItemFragment} from 'storefrontapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {SiteHeader} from '~/components/SiteHeader';
+import {NavPill} from '~/components/NavPill';
 
 export const meta: Route.MetaFunction = ({data}) => [
   {title: `${data?.blog.title ?? 'Blog'} — P3XIV`},
@@ -33,20 +35,9 @@ export default function Blog() {
   const {blog} = useLoaderData<typeof loader>();
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
+    <div className="min-h-screen pb-28 bg-background text-foreground font-sans">
 
-      {/* Floating nav — sits over the hero image */}
-      <header className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-6 sm:px-12 h-16">
-        <Link
-          to="/"
-          className="font-display text-lg tracking-tight text-white/90 hover:text-white transition-colors drop-shadow"
-        >
-          ← P3XIV
-        </Link>
-        <span className="text-[10px] uppercase tracking-[0.3em] text-white/60 drop-shadow hidden sm:inline">
-          {blog.title}
-        </span>
-      </header>
+      <SiteHeader />
 
       {/* Featured hero — newest article, full bleed */}
       <PaginatedResourceSection<ArticleItemFragment> connection={blog.articles}>
@@ -85,6 +76,8 @@ export default function Blog() {
           }}
         </PaginatedResourceSection>
       </section>
+
+      <NavPill mode="article" title={blog.title} />
     </div>
   );
 }
