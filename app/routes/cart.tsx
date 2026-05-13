@@ -3,9 +3,12 @@ import type {Route} from './+types/cart';
 import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
+import {Aside} from '~/components/Aside';
+import {SiteHeader} from '~/components/SiteHeader';
+import {PolicyBar} from '~/components/PolicyBar';
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Cart`}];
+  return [{title: `Your Bag — P3XIV`}];
 };
 
 export const headers: HeadersFunction = ({actionHeaders}) => actionHeaders;
@@ -105,9 +108,20 @@ export default function Cart() {
   const cart = useLoaderData<typeof loader>();
 
   return (
-    <div className="cart">
-      <h1>Cart</h1>
-      <CartMain layout="page" cart={cart} />
-    </div>
+    <Aside.Provider>
+      <div className="min-h-screen bg-background text-foreground font-sans pt-16 pb-16">
+        <SiteHeader />
+
+        <main className="max-w-3xl mx-auto px-6 sm:px-12 py-12">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground mb-4">Your Bag</p>
+          <h1 className="font-display text-5xl sm:text-6xl leading-[0.92] tracking-tight mb-12">
+            Bag
+          </h1>
+          <CartMain layout="page" cart={cart} />
+        </main>
+
+        <PolicyBar />
+      </div>
+    </Aside.Provider>
   );
 }

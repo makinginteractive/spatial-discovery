@@ -193,6 +193,35 @@ export default function Product() {
             </Link>
           </div>
 
+          {/* Trust + Shipping */}
+          <div className="border-t border-border pt-5 space-y-4">
+            {/* Shipping callout */}
+            <div className="flex items-start gap-3">
+              <span className="text-lg mt-0.5">📦</span>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.2em]">Free US Shipping</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Ships within 14 days · Delivered in ~5 business days</p>
+              </div>
+            </div>
+            {/* Trust badges */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                {icon: '↩', label: '30-Day Returns', sub: 'Worn is fine — we donate'},
+                {icon: '🔒', label: 'Secure Checkout', sub: 'SSL encrypted payment'},
+                {icon: '✦', label: 'Quality Guaranteed', sub: 'Every piece inspected'},
+                {icon: '✉', label: 'Real Support', sub: 'pressonclothingcompany@gmail.com'},
+              ].map(({icon, label, sub}) => (
+                <div key={label} className="flex items-start gap-2.5">
+                  <span className="text-base mt-0.5 shrink-0">{icon}</span>
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.2em]">{label}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Description */}
           {product.descriptionHtml && (
             <div
